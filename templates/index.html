@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Запись на тренировки</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-app.js";
+        import { getMessaging, getToken, isSupported } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-messaging.js";
+
+        window.firebaseModules = {
+            initializeApp,
+            getMessaging,
+            getToken,
+            isSupported
+        };
+    </script>
+</head>
+<body>
+
+<div class="page">
+    <div class="container">
+        <header class="hero">
+            <h1>🏀 Запись на тренировки</h1>
+            <p>Закрытый сайт для записи на баскетбольные тренировки.</p>
+
+            <div class="admin-header-links">
+                {% if user and user["is_admin"] == 1 %}
+                    <a class="admin-link" href="{{ url_for('admin_panel') }}">Админка</a>
+                {% endif %}
+                <a class="admin-link" href="{{ url_for('logout') }}">Выйти</a>
+            </div>
+
+            {% if user and user["status"] == "approved" %}
+                <div class="hero-actions">
+                    <button id="enablePushBtn" class="install-btn" type="button">
+                        Разрешить уведомления
+                    </button>
+                    <button id="installBtn" class="install-btn" type="button" style="display:none;">
+                        Установить приложение
+                    </button>
+                </div>
+            {% endif %}
+        </header>
+
+        {% if user["status"] == "pending" %}
+            <section class="message-card">
+                <div class="message-icon">⏳</div>
+                <h1>Заявка на рассмотрении</h1>
+                <p class="message-text">
+                    Здравствуйте, {{ user["display_name"] }}. Ваш аккаунт создан, но пока ожидает одобрения администратором.
+                </p>
+            </section>
+
+        {% elif user["status"] == "blocked" %}
+            <section class="message-card">
+                <div class="message-icon">⛔</div>
+                <h1>Доступ ограничен</h1>
+                <p class="message-text">
+                    Извините, доступ к записи на тренировки ограничен. Свяжитесь с администратором.
+                </p>
+            </section>
+
+        {% else %}
+            {% if trainings_data %}
+                {% for item in trainings_data %}
+                    {% set training = item.training %}
+                    {% set players = item.players %}
+                    {% set waitlist = item.waitlist %}
+                    {% set registration_status = item.registration_status %}
+                    {% set plus_one_available = item.plus_one_available %}
+                    {% set current_user_registration = item.current_user_registration %}
+
+                    <section class="training-card">
+                        <div class="training-top">
+                            <div>
+                                <h2>{{ training["title"] }}</h2>
+                                <p class="training-meta">
+                                    📅 Тренировка: {{ training["training_date"] }} &nbsp;&nbsp; 🕒 {{ training["training_time"] }}
+                                </p>
+                                <p class="training-meta">🟢 Начало записи: {{ training["registration_start"].replace("T", " ") }}</p>
+                                <p class="training-meta">🔴 Конец записи: {{ training["registration_end"].replace("T", " ") }}</p>
+                            </div>
+
+                            <div class="training-badges">
+                                <span class="badge badge-blue">Мест: {{ players|length }}/{{ training["max_players"] }}</span>
+
+                                {% if registration_status == "open" %}
+                                    <span class="badge badge-green">Запись открыта</span>
+                                {% elif registration_status == "not_started" %}
+                                    <span class="badge badge-orange">Запись ещё не началась</span>
+                                {% else %}
+                                    <span class="badge badge-red">Запись закрыта</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if not current_user_registration and registration_status == "open" %}
+                            <form method="POST" action="{{ url_for('register_training', training_id=training['id']) }}" class="register-form">
+                                <button type="submit" class="register-btn">Записаться</button>
+                            </form>
+                        {% elif current_user_registration %}
+                            <div class="closed-box">
+                                Вы уже записаны на эту тренировку.
+                            </div>
+                        {% elif registration_status == "not_started" %}
+                            <div class="closed-box">
+                                Запись ещё не началась.
+                            </div>
+                        {% else %}
+                            <div class="closed-box">
+                                Время записи на эту тренировку уже закончилось.
+                            </div>
+                        {% endif %}
+
+                        <div class="lists">
+                            <div class="list-card">
+                                <div class="card-header">
+                                    <h3>Основной состав</h3>
+                                    <span class="badge badge-green">{{ players|length }}</span>
+                                </div>
+
+                                {% if players %}
+                                    <ul class="player-list">
+                                        {% for p in players %}
+                                            <li class="player-item">
+                                                <div class="player-info">
+                                                    <span class="player-name">{{ p["display_name"] }}</span>
+                                                    <span class="player-status active-status">
+                                                        {% if p["is_plus_one"] == 1 %}
+                                                            Добавлен по +1
+                                                        {% else %}
+                                                            Подтверждён
+                                                        {% endif %}
+                                                    </span>
+                                                </div>
+
+                                                <div class="player-actions">
+                                                    {% if p["user_id"] == user["id"] and p["is_plus_one"] == 0 and plus_one_available %}
+                                                        <form method="POST" action="{{ url_for('add_plus_one', training_id=training['id']) }}">
+                                                            <button type="submit" class="plus-one-btn">+1</button>
+                                                        </form>
+                                                    {% endif %}
+
+                                                    {% if p["user_id"] == user["id"] %}
+                                                        <form method="POST" action="{{ url_for('cancel', registration_id=p['id']) }}">
+                                                            <button type="submit" class="cancel-btn">Отменить</button>
+                                                        </form>
+                                                    {% endif %}
+                                                </div>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <p class="empty-text">Пока никто не записался.</p>
+                                {% endif %}
+                            </div>
+
+                            <div class="list-card">
+                                <div class="card-header">
+                                    <h3>Живая очередь</h3>
+                                    <span class="badge badge-orange">{{ waitlist|length }}</span>
+                                </div>
+
+                                {% if waitlist %}
+                                    <ul class="player-list">
+                                        {% for p in waitlist %}
+                                            <li class="player-item">
+                                                <div class="player-info">
+                                                    <span class="player-name">{{ loop.index }}. {{ p["display_name"] }}</span>
+                                                    <span class="player-status wait-status">Ожидает место</span>
+                                                </div>
+
+                                                {% if p["user_id"] == user["id"] %}
+                                                    <form method="POST" action="{{ url_for('cancel', registration_id=p['id']) }}">
+                                                        <button type="submit" class="cancel-btn">Отменить</button>
+                                                    </form>
+                                                {% endif %}
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <p class="empty-text">Очередь пуста.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </section>
+                {% endfor %}
+            {% else %}
+                <div class="empty-training-box">
+                    Пока нет созданных тренировок.
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    let deferredPrompt = null;
+    const installBtn = document.getElementById("installBtn");
+
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("/sw.js")
+                .then((registration) => {
+                    console.log("Service Worker зарегистрирован:", registration.scope);
+                })
+                .catch((error) => {
+                    console.log("Ошибка регистрации Service Worker:", error);
+                });
+        });
+    }
+
+    window.addEventListener("beforeinstallprompt", (event) => {
+        event.preventDefault();
+        deferredPrompt = event;
+        if (installBtn) {
+            installBtn.style.display = "inline-block";
+        }
+    });
+
+    if (installBtn) {
+        installBtn.addEventListener("click", async () => {
+            if (!deferredPrompt) return;
+
+            deferredPrompt.prompt();
+            await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            installBtn.style.display = "none";
+        });
+    }
+</script>
+
+<script type="module">
+    const pushBtn = document.getElementById("enablePushBtn");
+
+    if (pushBtn) {
+        if (Notification.permission === "granted") {
+            pushBtn.style.display = "none";
+        } else if (Notification.permission === "denied") {
+            pushBtn.style.display = "none";
+            console.log("Пользователь запретил уведомления");
+        } else {
+            pushBtn.style.display = "inline-block";
+        }
+    }
+
+    async function enablePushNotifications() {
+        try {
+            if (!pushBtn) return;
+
+            const supported = await window.firebaseModules.isSupported();
+
+            if (!supported) {
+                alert("Push-уведомления не поддерживаются в этом браузере.");
+                return;
+            }
+
+            const permission = await Notification.requestPermission();
+
+            if (permission !== "granted") {
+                alert("Разрешение на уведомления не выдано.");
+                return;
+            }
+
+            const firebaseConfig = {
+                apiKey: "{{ firebase_api_key }}",
+                authDomain: "{{ firebase_auth_domain }}",
+                projectId: "{{ firebase_project_id }}",
+                messagingSenderId: "{{ firebase_messaging_sender_id }}",
+                appId: "{{ firebase_app_id }}"
+            };
+
+            const app = window.firebaseModules.initializeApp(firebaseConfig);
+            const messaging = window.firebaseModules.getMessaging(app);
+
+            const swReg = await navigator.serviceWorker.ready;
+
+            const token = await window.firebaseModules.getToken(messaging, {
+                vapidKey: "{{ firebase_vapid_key }}",
+                serviceWorkerRegistration: swReg
+            });
+
+            if (!token) {
+                alert("Не удалось получить push token.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("fcm_token", token);
+
+            const response = await fetch("/push/save-token", {
+                method: "POST",
+                body: formData
+            });
+
+            if (response.ok) {
+                alert("Push-уведомления подключены.");
+                pushBtn.style.display = "none";
+            } else {
+                alert("Не удалось сохранить push token.");
+            }
+        } catch (error) {
+            console.error("Ошибка enablePushNotifications:", error);
+            alert("Ошибка при подключении push. Открой консоль браузера.");
+        }
+    }
+
+    if (pushBtn) {
+        pushBtn.addEventListener("click", enablePushNotifications);
+    }
+</script>
+
+</body>
+</html>
