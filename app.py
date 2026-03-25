@@ -343,11 +343,14 @@ def notify_open_trainings():
             )
 
             for user in approved_users:
+                # email сейчас отключён, но можно оставить вызов
                 send_email(user["email"], subject, body)
+
+                # push-уведомление
                 send_push_to_user_tokens(
                     user["id"],
-                    f"Открыта запись: {training['title']}",
-                    f"{training['training_date']} в {training['training_time']}",
+                    "Открыта запись на тренировку",
+                    f"{training['title']} — {training['training_date']} {training['training_time']}",
                     "/"
                 )
 
