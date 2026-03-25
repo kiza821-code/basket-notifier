@@ -911,30 +911,35 @@ def approve_user(user_id):
         SET status = 'approved'
         WHERE id = ?
     """, (user_id,))
+
     db.commit()
     db.close()
 
-    print("APPROVE: статус обновлён, отправляем email")
+    print("APPROVE: статус обновлён")
 
-    send_email(
-        user_to_approve["email"],
-        "Доступ к тренировкам одобрен",
-        (
-            f"Здравствуйте, {user_to_approve['display_name']}!\n\n"
-            f"Ваша заявка одобрена. Теперь вы можете войти на сайт и записываться на тренировки."
+    try:
+        send_email(
+            user_to_approve["email"],
+            "Доступ к тренировкам одобрен",
+            (
+                f"Здравствуйте, {user_to_approve['display_name']}!\n\n"
+                f"Ваша заявка одобрена. Теперь вы можете войти на сайт и записываться на тренировки."
+            )
         )
-    )
+        print("APPROVE: email отправлен")
+    except Exception as e:
+        print("APPROVE EMAIL ERROR:", repr(e))
 
-    print("APPROVE: email-функция завершилась, отправляем push")
-
-    send_push_to_user_tokens(
-        user_to_approve["id"],
-        "Доступ одобрен",
-        "Теперь вы можете записываться на тренировки.",
-        "/"
-    )
-
-    print("APPROVE: готово")
+    try:
+        send_push_to_user_tokens(
+            user_to_approve["id"],
+            "Доступ одобрен",
+            "Теперь вы можете записываться на тренировки.",
+            "/"
+        )
+        print("APPROVE: push отправлен")
+    except Exception as e:
+        print("APPROVE PUSH ERROR:", repr(e))
 
     return redirect(url_for("admin_panel"))
 
@@ -1077,6 +1082,8 @@ def update_training(training_id):
 @app.route("/admin/delete_training/<int:training_id>")
 @admin_required
 def delete_training(training_id):
+    print(f"DELETE TRAINING: старт training_id={training_id}")
+
     db = get_db()
     cursor = db.cursor()
 
@@ -1085,6 +1092,7 @@ def delete_training(training_id):
     """, (training_id,)).fetchone()
 
     if not training:
+        print("DELETE TRAINING: тренировка не найдена")
         db.close()
         return redirect(url_for("admin_panel"))
 
@@ -1096,30 +1104,45 @@ def delete_training(training_id):
         ORDER BY r.created_at ASC
     """, (training_id,)).fetchall()
 
+    print(f"DELETE TRAINING: найдено записей {len(registrations)}")
+
     for registration in registrations:
-        send_email(
-            registration["email"],
-            "Тренировка отменена",
-            (
-                f"К сожалению, тренировка '{training['title']}' "
-                f"на {training['training_date']} в {training['training_time']} была отменена.\n\n"
-                f"Ваша запись аннулирована."
+        try:
+            send_email(
+                registration["email"],
+                "Тренировка отменена",
+                (
+                    f"К сожалению, тренировка '{training['title']}' "
+                    f"на {training['training_date']} в {training['training_time']} была отменена.\n\n"
+                    f"Ваша запись аннулирована."
+                )
             )
-        )
+            print(f"DELETE TRAINING: email отправлен {registration['email']}")
+        except Exception as e:
+            print("DELETE TRAINING EMAIL ERROR:", repr(e))
 
-        send_push_to_user_tokens(
-            registration["user_id"],
-            "Тренировка отменена",
-            f"{training['title']} — {training['training_date']} {training['training_time']}",
-            "/"
-        )
+        try:
+            send_push_to_user_tokens(
+                registration["user_id"],
+                "Тренировка отменена",
+                f"{training['title']} — {training['training_date']} {training['training_time']}",
+                "/"
+            )
+            print(f"DELETE TRAINING: push отправлен user_id={registration['user_id']}")
+        except Exception as e:
+            print("DELETE TRAINING PUSH ERROR:", repr(e))
 
-    cursor.execute("DELETE FROM registrations WHERE training_id = ?", (training_id,))
-    cursor.execute("DELETE FROM trainings WHERE id = ?", (training_id,))
+    try:
+        cursor.execute("DELETE FROM registrations WHERE training_id = ?", (training_id,))
+        cursor.execute("DELETE FROM trainings WHERE id = ?", (training_id,))
+        db.commit()
+        print("DELETE TRAINING: удаление из БД выполнено")
+    except Exception as e:
+        db.close()
+        print("DELETE TRAINING DB ERROR:", repr(e))
+        return "Ошибка удаления тренировки, смотри консоль", 500
 
-    db.commit()
     db.close()
-
     return redirect(url_for("admin_panel"))
 
 
