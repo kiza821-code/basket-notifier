@@ -1299,5 +1299,14 @@ def debug_send_test_email():
     )
     return "email sent"
 
+@app.route("/tasks/run-all")
+def run_all_tasks():
+    print("CRON: запуск всех задач")
+
+    notify_open_trainings()
+    notify_plus_one_available()
+
+    return "ok", 200
+
 if __name__ == "__main__":
     app.run(debug=True)
