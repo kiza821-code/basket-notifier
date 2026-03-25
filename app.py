@@ -159,30 +159,8 @@ def render_message_page(title, message):
 
 
 def send_email(to_email, subject, body):
-    print(f"EMAIL: попытка отправки на {to_email}")
-
-    if not to_email or EMAIL_ADDRESS == "ТВОЯ_ПОЧТА@gmail.com":
-        print("EMAIL: пропущено, не заполнены настройки")
-        return
-
-    try:
-        msg = MIMEMultipart()
-        msg["From"] = f"Basket Trainings <{EMAIL_ADDRESS}>"
-        msg["To"] = to_email
-        msg["Subject"] = subject
-
-        msg.attach(MIMEText(body, "plain", "utf-8"))
-
-        server = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT)
-        server.starttls()
-        server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-        server.sendmail(EMAIL_ADDRESS, to_email, msg.as_string())
-        server.quit()
-
-        print(f"EMAIL: отправлено на {to_email}")
-
-    except Exception as e:
-        print("EMAIL ERROR:", repr(e))
+    print(f"EMAIL DISABLED: письмо не отправляется. Получатель: {to_email}, тема: {subject}")
+    return
 
 
 def save_push_subscription(user_id, fcm_token):
