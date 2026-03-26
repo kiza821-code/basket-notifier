@@ -213,6 +213,8 @@ def send_push_to_user_tokens(user_id, title, body, url="/"):
 
     db.close()
 
+    print(f"PUSH: user_id={user_id}, tokens_found={len(tokens)}")
+
     for row in tokens:
         token = row["fcm_token"]
 
@@ -222,15 +224,22 @@ def send_push_to_user_tokens(user_id, title, body, url="/"):
                     title=title,
                     body=body
                 ),
+                webpush=messaging.WebpushConfig(
+                    fcm_options=messaging.WebpushFCMOptions(
+                        link=url
+                    )
+                ),
                 data={
                     "url": url
                 },
                 token=token
             )
-            messaging.send(message)
+
+            response = messaging.send(message)
+            print(f"PUSH: отправлено успешно, response={response}, user_id={user_id}")
 
         except Exception as e:
-            print("Ошибка отправки push:", e)
+            print("PUSH ERROR:", repr(e))
 
 
 def get_current_user():
@@ -501,6 +510,11 @@ def admin_panel():
         ORDER BY created_at ASC
     """).fetchall()
 
+    all_users = cursor.execute("""
+        SELECT * FROM users
+        ORDER BY created_at ASC
+    """).fetchall()
+
     trainings = cursor.execute("""
         SELECT * FROM trainings
         ORDER BY training_date ASC, training_time ASC
@@ -512,6 +526,7 @@ def admin_panel():
         "admin_panel.html",
         user=user,
         pending_users=pending_users,
+        all_users=all_users,
         trainings=trainings
     )
 
@@ -928,7 +943,7 @@ def approve_user(user_id):
 @app.route("/admin/block_user/<int:user_id>")
 @admin_required
 def block_user(user_id):
-    db = get_db()
+    db = get_db()`
     cursor = db.cursor()
 
     cursor.execute("""
@@ -942,6 +957,124 @@ def block_user(user_id):
 
     return redirect(url_for("admin_panel"))
 
+@app.route("/admin/delete_user/<int:user_id>")
+@admin_required
+def delete_user(user_id):
+    current_admin = get_current_user()
+
+    db = get_db()
+    cursor = db.cursor()
+
+    user_to_delete = cursor.execute("""
+        SELECT * FROM users WHERE id = ?
+    """, (user_id,)).fetchone()
+
+    if not user_to_delete:
+        db.close()
+        return redirect(url_for("admin_panel"))
+
+    # Нельзя удалить самого себя
+    if user_to_delete["id"] == current_admin["id"]:
+        db.close()
+        return render_message_page(
+            "Удаление запрещено",
+            "Нельзя удалить самого себя."
+        )
+
+    # Нельзя удалить другого администратора
+    if user_to_delete["is_admin"] == 1:
+        db.close()
+        return render_message_page(
+            "Удаление запрещено",
+            "Нельзя удалить администратора."
+        )
+
+    # Находим все записи пользователя
+    registrations = cursor.execute("""
+        SELECT * FROM registrations
+        WHERE user_id = ?
+        ORDER BY created_at ASC
+    """, (user_id,)).fetchall()
+
+    for registration in registrations:
+        training_id = registration["training_id"]
+        removed_status = registration["status"]
+
+        training = cursor.execute("""
+            SELECT * FROM trainings WHERE id = ?
+        """, (training_id,)).fetchone()
+
+        if not training:
+            continue
+
+        # Если это основная запись, удаляем и его +1
+        if registration["is_plus_one"] == 0:
+            cursor.execute("""
+                DELETE FROM registrations
+                WHERE parent_registration_id = ? AND is_plus_one = 1
+            """, (registration["id"],))
+
+        cursor.execute("""
+            DELETE FROM registrations WHERE id = ?
+        """, (registration["id"],))
+
+        # Если пользователь был в основном составе — поднимаем из очереди
+        if removed_status == "active":
+            active_count = cursor.execute("""
+                SELECT COUNT(*) as count FROM registrations
+                WHERE training_id = ? AND status = 'active'
+            """, (training_id,)).fetchone()["count"]
+
+            while active_count < training["max_players"]:
+                next_user = cursor.execute("""
+                    SELECT r.*, u.email
+                    FROM registrations r
+                    JOIN users u ON u.id = r.user_id
+                    WHERE r.training_id = ? AND r.status = 'waitlist'
+                    ORDER BY r.created_at ASC
+                    LIMIT 1
+                """, (training_id,)).fetchone()
+
+                if not next_user:
+                    break
+
+                cursor.execute("""
+                    UPDATE registrations
+                    SET status = 'active'
+                    WHERE id = ?
+                """, (next_user["id"],))
+
+                try:
+                    send_push_to_user_tokens(
+                        next_user["user_id"],
+                        "Вы в основном составе",
+                        f"{training['title']} — {training['training_date']} {training['training_time']}",
+                        "/"
+                    )
+                except Exception as e:
+                    print("DELETE USER PUSH ERROR:", repr(e))
+
+                active_count += 1
+
+    # Удаляем push-токены пользователя
+    cursor.execute("""
+        DELETE FROM push_subscriptions WHERE user_id = ?
+    """, (user_id,))
+
+    # На всякий случай удаляем остаточные регистрации
+    cursor.execute("""
+        DELETE FROM registrations WHERE user_id = ?
+    """, (user_id,))
+
+    # Удаляем самого пользователя
+    cursor.execute("""
+        DELETE FROM users WHERE id = ?
+    """, (user_id,))
+
+    db.commit()
+    db.close()
+
+    return redirect(url_for("admin_panel"))
 
 @app.route("/admin/create_training", methods=["POST"])
 @admin_required

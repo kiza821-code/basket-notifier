@@ -62,6 +62,46 @@
 
         <section class="training-card">
             <div class="card-header">
+                <h3>Все пользователи</h3>
+                <span class="badge badge-blue">{{ all_users|length }}</span>
+            </div>
+
+            {% if all_users %}
+                <ul class="player-list">
+                    {% for u in all_users %}
+                        <li class="player-item">
+                            <div class="player-info">
+                                <span class="player-name">{{ u["display_name"] }}</span>
+                                <span class="player-status active-status">
+                                    {{ u["email"] }} |
+                                    status={{ u["status"] }} |
+                                    {% if u["is_admin"] == 1 %}
+                                        admin
+                                    {% else %}
+                                        user
+                                    {% endif %}
+                                </span>
+                            </div>
+
+                            <div class="player-actions">
+                                {% if u["is_admin"] != 1 and u["id"] != user["id"] %}
+                                    <a href="{{ url_for('delete_user', user_id=u['id']) }}"
+                                       class="action-btn red-btn"
+                                       onclick="return confirm('Удалить пользователя {{ u['display_name'] }}?');">
+                                        Удалить
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="empty-text">Пользователей пока нет.</p>
+            {% endif %}
+        </section>
+
+        <section class="training-card">
+            <div class="card-header">
                 <h3>Все тренировки</h3>
                 <span class="badge badge-blue">{{ trainings|length }}</span>
             </div>
