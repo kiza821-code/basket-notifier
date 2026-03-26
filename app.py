@@ -35,6 +35,7 @@ FIREBASE_VAPID_KEY = "BDKbWkhUbgcmXmOL3flbwWNeIdZ92B-lBPjgcNreUCx_aXRajSOa0wno6E
 # Firebase admin
 FIREBASE_SERVICE_ACCOUNT_FILE = "firebase-service-account.json"
 
+BASE_URL = "https://basketapp.ru"
 
 def now_local():
     return datetime.now(APP_TZ)
@@ -215,6 +216,13 @@ def send_push_to_user_tokens(user_id, title, body, url="/"):
 
     results = []
 
+    if not url.startswith("http://") and not url.startswith("https://"):
+        if not url.startswith("/"):
+            url = "/" + url
+        full_url = BASE_URL + url
+    else:
+        full_url = url
+
     for row in tokens:
         token = row["fcm_token"]
 
@@ -231,14 +239,14 @@ def send_push_to_user_tokens(user_id, title, body, url="/"):
                     notification=messaging.WebpushNotification(
                         title=title,
                         body=body,
-                        icon="/static/icon-192.png"
+                        icon=f"{BASE_URL}/static/icon-192.png"
                     ),
                     fcm_options=messaging.WebpushFCMOptions(
-                        link=url
+                        link=full_url
                     )
                 ),
                 data={
-                    "url": url,
+                    "url": full_url,
                     "title": title,
                     "body": body
                 },
