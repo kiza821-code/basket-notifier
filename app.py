@@ -19,10 +19,10 @@ ADMIN_EMAIL = "admin@example.com"
 ADMIN_PASSWORD = "12345"
 
 # Gmail SMTP
-EMAIL_HOST = "smtp.gmail.com"
-EMAIL_PORT = 587
-EMAIL_ADDRESS = "kiza821@gmail.com"
-EMAIL_PASSWORD = "rgipuxjxyxxllsrs"
+EMAIL_HOST = "smtp.mail.ru"
+EMAIL_PORT = 465
+EMAIL_ADDRESS = "basketapp@mail.ru"
+EMAIL_PASSWORD = "OIhdPTOxWLRXN32O1JUO"
 
 # Firebase web config
 FIREBASE_API_KEY = "AIzaSyD89nzI1hfe5KpqoQ2SBofIk7gju2EK78M"
@@ -160,8 +160,29 @@ def render_message_page(title, message):
 
 
 def send_email(to_email, subject, body):
-    print(f"EMAIL DISABLED: письмо не отправляется. Получатель: {to_email}, тема: {subject}")
-    return
+    print(f"EMAIL: попытка отправки на {to_email}")
+
+    if not to_email:
+        print("EMAIL: пустой адрес")
+        return
+
+    try:
+        msg = MIMEMultipart()
+        msg["From"] = f"Basket App <{EMAIL_ADDRESS}>"
+        msg["To"] = to_email
+        msg["Subject"] = subject
+
+        msg.attach(MIMEText(body, "plain", "utf-8"))
+
+        server = smtplib.SMTP_SSL(EMAIL_HOST, EMAIL_PORT)
+        server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+        server.sendmail(EMAIL_ADDRESS, to_email, msg.as_string())
+        server.quit()
+
+        print(f"EMAIL: отправлено на {to_email}")
+
+    except Exception as e:
+        print("EMAIL ERROR:", repr(e))
 
 
 def save_push_subscription(user_id, fcm_token):
@@ -374,23 +395,15 @@ def notify_open_trainings():
 
     for training in trainings:
         if get_registration_status(training) == "open":
-            subject = f"Открыта запись: {training['title']}"
-            body = (
-                f"Открыта запись на тренировку '{training['title']}'.\n\n"
-                f"Дата: {training['training_date']}\n"
-                f"Время: {training['training_time']}\n\n"
-                f"Зайдите на сайт и запишитесь."
-            )
+            title = "Открыта запись на тренировку"
+            body = f"{training['title']} — {training['training_date']} {training['training_time']}"
 
             for user in approved_users:
-                # email сейчас отключён, но можно оставить вызов
-                send_email(user["email"], subject, body)
-
-                # push-уведомление
+                send_email(user["email"], title, body)
                 send_push_to_user_tokens(
                     user["id"],
-                    "Открыта запись на тренировку",
-                    f"{training['title']} — {training['training_date']} {training['training_time']}",
+                    title,
+                    body,
                     "/"
                 )
 
@@ -432,15 +445,18 @@ def notify_plus_one_available():
 
         if can_plus_one_be_added(training, active_count):
             for player in active_players:
+                text = "Еще есть места, можешь позвать с собой кого-нибудь!"
+
                 send_email(
                     player["email"],
-                    "Появилась возможность добавить гостя",
-                    "Еще есть места, можешь позвать с собой кого-нибудь!"
+                    "Можно взять гостя",
+                    text
                 )
+
                 send_push_to_user_tokens(
                     player["user_id"],
                     "Можно взять гостя",
-                    "Еще есть места, можешь позвать с собой кого-нибудь!",
+                    text,
                     "/"
                 )
 
@@ -601,6 +617,7 @@ def register_account():
                 "Пользователь с таким email уже зарегистрирован."
             )
 
+        # Создаём нового пользователя со статусом pending
         cursor.execute("""
             INSERT INTO users (
                 email, password_hash, display_name, status, is_admin, created_at
@@ -614,7 +631,26 @@ def register_account():
         ))
 
         db.commit()
+
+        # После создания пользователя находим всех админов
+        admins = cursor.execute("""
+            SELECT * FROM users
+            WHERE is_admin = 1 AND status = 'approved'
+        """).fetchall()
+
         db.close()
+
+        # Отправляем push каждому админу
+        for admin in admins:
+            try:
+                send_push_to_user_tokens(
+                    admin["id"],
+                    "Новая заявка",
+                    f"Пользователь {display_name} ждёт одобрения",
+                    "/admin-panel"
+                )
+            except Exception as e:
+                print("REGISTER ADMIN PUSH ERROR:", repr(e))
 
         return render_message_page(
             "Заявка отправлена",
