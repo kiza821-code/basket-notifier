@@ -213,10 +213,11 @@ def send_push_to_user_tokens(user_id, title, body, url="/"):
 
     db.close()
 
-    print(f"PUSH: user_id={user_id}, tokens_found={len(tokens)}")
+    print(f"PUSH: start user_id={user_id}, tokens_found={len(tokens)}")
 
     for row in tokens:
         token = row["fcm_token"]
+        print(f"PUSH: token_prefix={token[:25]}...")
 
         try:
             message = messaging.Message(
@@ -225,21 +226,31 @@ def send_push_to_user_tokens(user_id, title, body, url="/"):
                     body=body
                 ),
                 webpush=messaging.WebpushConfig(
+                    headers={
+                        "Urgency": "high"
+                    },
+                    notification=messaging.WebpushNotification(
+                        title=title,
+                        body=body,
+                        icon="/static/icon-192.png"
+                    ),
                     fcm_options=messaging.WebpushFCMOptions(
                         link=url
                     )
                 ),
                 data={
-                    "url": url
+                    "url": url,
+                    "title": title,
+                    "body": body
                 },
                 token=token
             )
 
             response = messaging.send(message)
-            print(f"PUSH: отправлено успешно, response={response}, user_id={user_id}")
+            print(f"PUSH: success user_id={user_id}, response={response}")
 
         except Exception as e:
-            print("PUSH ERROR:", repr(e))
+            print(f"PUSH ERROR user_id={user_id}: {repr(e)}")
 
 
 def get_current_user():
