@@ -12,7 +12,7 @@ from firebase_admin import credentials, messaging
 app = Flask(__name__)
 app.secret_key = "super_secret_key_12345"
 
-APP_TZ = timezone(timedelta(hours=7))
+APP_TZ = timezone(timedelta(hours=0))
 
 # Первый админ создаётся автоматически при старте, если его ещё нет
 ADMIN_EMAIL = "admin@example.com"
