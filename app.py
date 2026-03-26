@@ -966,7 +966,7 @@ def approve_user(user_id):
 @app.route("/admin/block_user/<int:user_id>")
 @admin_required
 def block_user(user_id):
-    db = get_db()`
+    db = get_db()
     cursor = db.cursor()
 
     cursor.execute("""
