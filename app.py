@@ -1312,7 +1312,7 @@ def generate_schedule():
             reg_start = reg_start.replace(hour=12, minute=0)
 
             reg_end = datetime.combine(day, datetime.min.time()).replace(tzinfo=APP_TZ)
-            reg_end = reg_end.replace(hour=18, minute=30)
+            reg_end = reg_end.replace(hour=19, minute=30)
 
             reg_start_str = reg_start.strftime("%Y-%m-%dT%H:%M")
             reg_end_str = reg_end.strftime("%Y-%m-%dT%H:%M")

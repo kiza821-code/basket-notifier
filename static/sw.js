@@ -30,13 +30,11 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(event.request.url);
 
-  // HTML-страницы всегда тянем из сети
   if (event.request.mode === "navigate" || url.pathname === "/") {
     event.respondWith(fetch(event.request));
     return;
   }
 
-  // Статика — сначала из кэша
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       return cachedResponse || fetch(event.request);
@@ -46,14 +44,19 @@ self.addEventListener("fetch", (event) => {
 
 self.addEventListener("push", (event) => {
   let data = {
-    title: "Basket Trainings",
+    title: "Basket",
     body: "У вас новое уведомление",
-    url: "/"
+    url: "https://basketapp.ru/"
   };
 
   if (event.data) {
     try {
-      data = event.data.json();
+      const parsed = event.data.json();
+      data = {
+        title: parsed.title || "Basket",
+        body: parsed.body || "У вас новое уведомление",
+        url: parsed.url || "https://basketapp.ru/"
+      };
     } catch (e) {
       console.log("Push payload parse error:", e);
     }
@@ -65,7 +68,7 @@ self.addEventListener("push", (event) => {
       icon: "/static/icon-192.png",
       badge: "/static/icon-192.png",
       data: {
-        url: data.url || "/"
+        url: data.url
       }
     })
   );
@@ -74,7 +77,7 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  const targetUrl = event.notification.data?.url || "/";
+  const targetUrl = event.notification.data?.url || "https://basketapp.ru/";
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
