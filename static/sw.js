@@ -1,4 +1,4 @@
-const CACHE_NAME = "basket-app-v3";
+const CACHE_NAME = "basket-app-v4";
 const URLS_TO_CACHE = [
   "/static/style.css"
 ];
@@ -52,10 +52,12 @@ self.addEventListener("push", (event) => {
   if (event.data) {
     try {
       const parsed = event.data.json();
+      console.log("Push payload:", parsed);
+
       data = {
-        title: parsed.title || "Basket",
-        body: parsed.body || "У вас новое уведомление",
-        url: parsed.url || "https://basketapp.ru/"
+        title: parsed.title || parsed.notification?.title || "Basket",
+        body: parsed.body || parsed.notification?.body || "У вас новое уведомление",
+        url: parsed.url || parsed.data?.url || "https://basketapp.ru/"
       };
     } catch (e) {
       console.log("Push payload parse error:", e);

@@ -246,9 +246,9 @@ def send_push_to_user_tokens(user_id, title, body, url="/"):
                     )
                 ),
                 data={
-                    "url": full_url,
                     "title": title,
-                    "body": body
+                    "body": body,
+                    "url": full_url
                 },
                 token=token
             )
