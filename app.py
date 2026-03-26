@@ -213,11 +213,10 @@ def send_push_to_user_tokens(user_id, title, body, url="/"):
 
     db.close()
 
-    print(f"PUSH: start user_id={user_id}, tokens_found={len(tokens)}")
+    results = []
 
     for row in tokens:
         token = row["fcm_token"]
-        print(f"PUSH: token_prefix={token[:25]}...")
 
         try:
             message = messaging.Message(
@@ -247,10 +246,23 @@ def send_push_to_user_tokens(user_id, title, body, url="/"):
             )
 
             response = messaging.send(message)
-            print(f"PUSH: success user_id={user_id}, response={response}")
+
+            results.append({
+                "status": "success",
+                "user_id": user_id,
+                "token_prefix": token[:25],
+                "response": response
+            })
 
         except Exception as e:
-            print(f"PUSH ERROR user_id={user_id}: {repr(e)}")
+            results.append({
+                "status": "error",
+                "user_id": user_id,
+                "token_prefix": token[:25],
+                "error": repr(e)
+            })
+
+    return results
 
 
 def get_current_user():
@@ -1425,13 +1437,28 @@ def debug_trainings():
 @app.route("/debug/send-test-push/<int:user_id>")
 @admin_required
 def debug_send_test_push(user_id):
-    send_push_to_user_tokens(
+    results = send_push_to_user_tokens(
         user_id=user_id,
         title="Тестовое уведомление",
         body="Push-уведомления работают!",
         url="/"
     )
-    return "push sent"
+
+    if not results:
+        return "no active tokens found"
+
+    lines = []
+    for item in results:
+        if item["status"] == "success":
+            lines.append(
+                f"SUCCESS | user_id={item['user_id']} | token={item['token_prefix']}... | response={item['response']}"
+            )
+        else:
+            lines.append(
+                f"ERROR | user_id={item['user_id']} | token={item['token_prefix']}... | error={item['error']}"
+            )
+
+    return "<br>".join(lines)
 
 @app.route("/debug/send-test-email")
 def debug_send_test_email():
