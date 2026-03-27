@@ -399,13 +399,15 @@ def notify_open_trainings():
             body = f"{training['title']} — {training['training_date']} {training['training_time']}"
 
             for user in approved_users:
-                send_email(user["email"], title, body)
-                send_push_to_user_tokens(
-                    user["id"],
-                    title,
-                    body,
-                    "/"
-                )
+                try:
+                    send_push_to_user_tokens(
+                        user["id"],
+                        title,
+                        body,
+                        "/"
+                    )
+                except Exception as e:
+                    print("OPEN REG PUSH ERROR:", repr(e))
 
             cursor.execute("""
                 UPDATE trainings
@@ -445,20 +447,15 @@ def notify_plus_one_available():
 
         if can_plus_one_be_added(training, active_count):
             for player in active_players:
-                text = "Еще есть места, можешь позвать с собой кого-нибудь!"
-
-                send_email(
-                    player["email"],
-                    "Можно взять гостя",
-                    text
-                )
-
-                send_push_to_user_tokens(
-                    player["user_id"],
-                    "Можно взять гостя",
-                    text,
-                    "/"
-                )
+                try:
+                    send_push_to_user_tokens(
+                        player["user_id"],
+                        "Можно взять гостя",
+                        "Еще есть места, можешь позвать с собой кого-нибудь!",
+                        "/"
+                    )
+                except Exception as e:
+                    print("PLUS ONE PUSH ERROR:", repr(e))
 
             cursor.execute("""
                 UPDATE trainings
@@ -590,6 +587,13 @@ def check_plus_one_notifications():
     return "ok", 200
 
 
+@app.route("/tasks/run-all")
+def run_all_tasks():
+    notify_open_trainings()
+    notify_plus_one_available()
+    return "ok", 200
+
+
 @app.route("/register", methods=["GET", "POST"])
 def register_account():
     if request.method == "POST":
@@ -617,7 +621,6 @@ def register_account():
                 "Пользователь с таким email уже зарегистрирован."
             )
 
-        # Создаём нового пользователя со статусом pending
         cursor.execute("""
             INSERT INTO users (
                 email, password_hash, display_name, status, is_admin, created_at
@@ -632,7 +635,6 @@ def register_account():
 
         db.commit()
 
-        # После создания пользователя находим всех админов
         admins = cursor.execute("""
             SELECT * FROM users
             WHERE is_admin = 1 AND status = 'approved'
@@ -640,7 +642,6 @@ def register_account():
 
         db.close()
 
-        # Отправляем push каждому админу
         for admin in admins:
             try:
                 send_push_to_user_tokens(
@@ -844,23 +845,15 @@ def cancel(registration_id):
             """, (next_user["id"],))
             db.commit()
 
-            send_email(
-                next_user["email"],
-                "Вы переведены в основной состав",
-                (
-                    f"Освободилось место на тренировку '{training['title']}'.\n\n"
-                    f"Дата: {training['training_date']}\n"
-                    f"Время: {training['training_time']}\n\n"
-                    f"Теперь вы в основном составе."
+            try:
+                send_push_to_user_tokens(
+                    next_user["user_id"],
+                    "Вы в основном составе",
+                    f"{training['title']} — {training['training_date']} {training['training_time']}",
+                    "/"
                 )
-            )
-
-            send_push_to_user_tokens(
-                next_user["user_id"],
-                "Вы в основном составе",
-                f"{training['title']} — {training['training_date']} {training['training_time']}",
-                "/"
-            )
+            except Exception as e:
+                print("QUEUE PROMOTE PUSH ERROR:", repr(e))
 
             active_count += 1
 
@@ -953,8 +946,6 @@ def add_plus_one(training_id):
 @app.route("/admin/approve_user/<int:user_id>")
 @admin_required
 def approve_user(user_id):
-    print(f"APPROVE: старт approve_user для user_id={user_id}")
-
     db = get_db()
     cursor = db.cursor()
 
@@ -963,11 +954,8 @@ def approve_user(user_id):
     """, (user_id,)).fetchone()
 
     if not user_to_approve:
-        print("APPROVE: пользователь не найден")
         db.close()
         return redirect(url_for("admin_panel"))
-
-    print(f"APPROVE: найден пользователь {user_to_approve['email']}")
 
     cursor.execute("""
         UPDATE users
@@ -978,21 +966,6 @@ def approve_user(user_id):
     db.commit()
     db.close()
 
-    print("APPROVE: статус обновлён")
-
-    try:
-        send_email(
-            user_to_approve["email"],
-            "Доступ к тренировкам одобрен",
-            (
-                f"Здравствуйте, {user_to_approve['display_name']}!\n\n"
-                f"Ваша заявка одобрена. Теперь вы можете войти на сайт и записываться на тренировки."
-            )
-        )
-        print("APPROVE: email отправлен")
-    except Exception as e:
-        print("APPROVE EMAIL ERROR:", repr(e))
-
     try:
         send_push_to_user_tokens(
             user_to_approve["id"],
@@ -1000,7 +973,6 @@ def approve_user(user_id):
             "Теперь вы можете записываться на тренировки.",
             "/"
         )
-        print("APPROVE: push отправлен")
     except Exception as e:
         print("APPROVE PUSH ERROR:", repr(e))
 
@@ -1263,8 +1235,6 @@ def update_training(training_id):
 @app.route("/admin/delete_training/<int:training_id>")
 @admin_required
 def delete_training(training_id):
-    print(f"DELETE TRAINING: старт training_id={training_id}")
-
     db = get_db()
     cursor = db.cursor()
 
@@ -1273,7 +1243,6 @@ def delete_training(training_id):
     """, (training_id,)).fetchone()
 
     if not training:
-        print("DELETE TRAINING: тренировка не найдена")
         db.close()
         return redirect(url_for("admin_panel"))
 
@@ -1285,23 +1254,7 @@ def delete_training(training_id):
         ORDER BY r.created_at ASC
     """, (training_id,)).fetchall()
 
-    print(f"DELETE TRAINING: найдено записей {len(registrations)}")
-
     for registration in registrations:
-        try:
-            send_email(
-                registration["email"],
-                "Тренировка отменена",
-                (
-                    f"К сожалению, тренировка '{training['title']}' "
-                    f"на {training['training_date']} в {training['training_time']} была отменена.\n\n"
-                    f"Ваша запись аннулирована."
-                )
-            )
-            print(f"DELETE TRAINING: email отправлен {registration['email']}")
-        except Exception as e:
-            print("DELETE TRAINING EMAIL ERROR:", repr(e))
-
         try:
             send_push_to_user_tokens(
                 registration["user_id"],
@@ -1309,21 +1262,15 @@ def delete_training(training_id):
                 f"{training['title']} — {training['training_date']} {training['training_time']}",
                 "/"
             )
-            print(f"DELETE TRAINING: push отправлен user_id={registration['user_id']}")
         except Exception as e:
             print("DELETE TRAINING PUSH ERROR:", repr(e))
 
-    try:
-        cursor.execute("DELETE FROM registrations WHERE training_id = ?", (training_id,))
-        cursor.execute("DELETE FROM trainings WHERE id = ?", (training_id,))
-        db.commit()
-        print("DELETE TRAINING: удаление из БД выполнено")
-    except Exception as e:
-        db.close()
-        print("DELETE TRAINING DB ERROR:", repr(e))
-        return "Ошибка удаления тренировки, смотри консоль", 500
+    cursor.execute("DELETE FROM registrations WHERE training_id = ?", (training_id,))
+    cursor.execute("DELETE FROM trainings WHERE id = ?", (training_id,))
 
+    db.commit()
     db.close()
+
     return redirect(url_for("admin_panel"))
 
 
@@ -1517,14 +1464,6 @@ def debug_send_test_email():
     )
     return "email sent"
 
-@app.route("/tasks/run-all")
-def run_all_tasks():
-    print("CRON: запуск всех задач")
-
-    notify_open_trainings()
-    notify_plus_one_available()
-
-    return "ok", 200
 
 if __name__ == "__main__":
     app.run(debug=True)
