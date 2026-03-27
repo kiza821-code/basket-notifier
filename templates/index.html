@@ -28,7 +28,6 @@
     <div class="container">
         <header class="hero">
             <h1>🏀 Запись на тренировки</h1>
-            <p>Закрытый сайт для записи на баскетбольные тренировки.</p>
 
             <div class="admin-header-links">
                 {% if user and user["is_admin"] == 1 %}
@@ -84,8 +83,6 @@
                                 <p class="training-meta">
                                     📅 Тренировка: {{ training["training_date"] }} &nbsp;&nbsp; 🕒 {{ training["training_time"] }}
                                 </p>
-                                <p class="training-meta">🟢 Начало записи: {{ training["registration_start"].replace("T", " ") }}</p>
-                                <p class="training-meta">🔴 Конец записи: {{ training["registration_end"].replace("T", " ") }}</p>
                             </div>
 
                             <div class="training-badges">

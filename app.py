@@ -167,12 +167,15 @@ def init_firebase_admin():
 def render_message_page(title, message):
     return render_template("message.html", title=title, message=message)
 
-
 def send_email(to_email, subject, body):
     print(f"EMAIL: попытка отправки на {to_email}")
 
     if not to_email:
         print("EMAIL: пустой адрес")
+        return
+
+    if not EMAIL_ADDRESS or not EMAIL_PASSWORD:
+        print("EMAIL: не заданы EMAIL_ADDRESS или EMAIL_PASSWORD")
         return
 
     try:
@@ -991,6 +994,20 @@ def approve_user(user_id):
     except Exception as e:
         print("APPROVE PUSH ERROR:", repr(e))
 
+    try:
+        send_email(
+            user_to_approve["email"],
+            "Заявка одобрена",
+            (
+                f"Здравствуйте, {user_to_approve['display_name']}!\n\n"
+                f"Ваша заявка на доступ к Basket App одобрена.\n"
+                f"Теперь вы можете войти на сайт и записываться на тренировки.\n\n"
+                f"Сайт: {BASE_URL}"
+            )
+        )
+    except Exception as e:
+        print("APPROVE EMAIL ERROR:", repr(e))
+
     return redirect(url_for("admin_panel"))
 
 
@@ -1127,6 +1144,19 @@ def delete_user(user_id):
 
     db.commit()
     db.close()
+
+    try:
+        send_email(
+            deleted_email,
+            "Ваш аккаунт удалён",
+            (
+                f"Здравствуйте, {deleted_name}!\n\n"
+                f"Ваш аккаунт в Basket App был удалён администратором.\n"
+                f"Если это произошло по ошибке, свяжитесь с администратором."
+            )
+        )
+    except Exception as e:
+        print("DELETE USER EMAIL ERROR:", repr(e))
 
     return redirect(url_for("admin_panel"))
 
