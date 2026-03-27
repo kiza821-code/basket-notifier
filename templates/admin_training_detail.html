@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тренировка</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <h1>Управление тренировкой</h1>
+
+        <form method="post" action="{{ url_for('admin_training_update', training_id=training['id']) }}">
+            <label>Название</label>
+            <input type="text" name="title" value="{{ training['title'] }}" required>
+
+            <label>Дата</label>
+            <input type="date" name="training_date" value="{{ training['training_date'] }}" required>
+
+            <label>Время</label>
+            <input type="time" name="training_time" value="{{ training['training_time'] }}" required>
+
+            <label>Максимум игроков</label>
+            <input type="number" name="max_players" value="{{ training['max_players'] }}" required>
+
+            <label>Начало записи</label>
+            <input type="datetime-local" name="registration_start" value="{{ training['registration_start'] }}" required>
+
+            <label>Конец записи</label>
+            <input type="datetime-local" name="registration_end" value="{{ training['registration_end'] }}" required>
+
+            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Основной состав</h2>
+
+        {% if active_players %}
+            <ul>
+                {% for p in active_players %}
+                    <li style="margin-bottom: 12px;">
+                        <strong>{{ p["display_name"] }}</strong> — {{ p["email"] }}
+                        <br>
+                        Статус оплаты:
+                        {% if p["is_paid"] == 1 %}
+                            <span style="color: green;">оплачено</span>
+                        {% else %}
+                            <span style="color: red;">не оплачено</span>
+                        {% endif %}
+                        <br><br>
+
+                        <a href="{{ url_for('toggle_payment', registration_id=p['id']) }}" class="btn btn-primary">
+                            {% if p["is_paid"] == 1 %}
+                                Снять оплату
+                            {% else %}
+                                Отметить оплату
+                            {% endif %}
+                        </a>
+
+                        <a href="{{ url_for('admin_remove_registration', training_id=training['id'], registration_id=p['id']) }}"
+                           class="btn"
+                           onclick="return confirm('Удалить участника из тренировки?');">
+                            Удалить из тренировки
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Основной состав пуст.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h2>Живая очередь</h2>
+
+        {% if waitlist_players %}
+            <ul>
+                {% for p in waitlist_players %}
+                    <li style="margin-bottom: 12px;">
+                        <strong>{{ p["display_name"] }}</strong> — {{ p["email"] }}
+                        <br><br>
+
+                        <a href="{{ url_for('admin_remove_registration', training_id=training['id'], registration_id=p['id']) }}"
+                           class="btn"
+                           onclick="return confirm('Удалить участника из очереди?');">
+                            Удалить из очереди
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Очередь пуста.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <a href="{{ url_for('admin_panel') }}" class="btn">Назад в админку</a>
+    </div>
+</div>
+</body>
+</html>

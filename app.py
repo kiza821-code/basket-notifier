@@ -1660,5 +1660,180 @@ def debug_payment_links():
         thursday_url="/payment/thursday"
     )
 
+@app.route("/admin/training/<int:training_id>")
+@admin_required
+def admin_training_detail(training_id):
+    db = get_db()
+    cursor = db.cursor()
+
+    training = cursor.execute("""
+        SELECT * FROM trainings WHERE id = ?
+    """, (training_id,)).fetchone()
+
+    if not training:
+        db.close()
+        return render_message_page("Не найдено", "Тренировка не найдена.")
+
+    active_players = cursor.execute("""
+        SELECT r.*, u.email
+        FROM registrations r
+        JOIN users u ON u.id = r.user_id
+        WHERE r.training_id = ? AND r.status = 'active'
+        ORDER BY r.created_at ASC
+    """, (training_id,)).fetchall()
+
+    waitlist_players = cursor.execute("""
+        SELECT r.*, u.email
+        FROM registrations r
+        JOIN users u ON u.id = r.user_id
+        WHERE r.training_id = ? AND r.status = 'waitlist'
+        ORDER BY r.created_at ASC
+    """, (training_id,)).fetchall()
+
+    db.close()
+
+    return render_template(
+        "admin_training_detail.html",
+        training=training,
+        active_players=active_players,
+        waitlist_players=waitlist_players
+    )
+
+@app.route("/admin/training/<int:training_id>/update", methods=["POST"])
+@admin_required
+def admin_training_update(training_id):
+    title = request.form.get("title", "").strip()
+    training_date = request.form.get("training_date", "").strip()
+    training_time = request.form.get("training_time", "").strip()
+    max_players = request.form.get("max_players", "15").strip()
+    registration_start = request.form.get("registration_start", "").strip()
+    registration_end = request.form.get("registration_end", "").strip()
+
+    try:
+        max_players = int(max_players)
+    except ValueError:
+        return render_message_page("Ошибка", "Количество игроков должно быть числом.")
+
+    db = get_db()
+    cursor = db.cursor()
+
+    old_training = cursor.execute("""
+        SELECT * FROM trainings WHERE id = ?
+    """, (training_id,)).fetchone()
+
+    if not old_training:
+        db.close()
+        return render_message_page("Ошибка", "Тренировка не найдена.")
+
+    new_open_notification_sent = old_training["open_notification_sent"]
+    new_plus_one_notification_sent = old_training["plus_one_notification_sent"]
+    new_completed_notification_sent = old_training["completed_notification_sent"]
+
+    if old_training["registration_start"] != registration_start:
+        new_open_notification_sent = 0
+
+    if (
+        old_training["training_date"] != training_date
+        or old_training["training_time"] != training_time
+    ):
+        new_plus_one_notification_sent = 0
+        new_completed_notification_sent = 0
+
+    cursor.execute("""
+        UPDATE trainings
+        SET title = ?, training_date = ?, training_time = ?, max_players = ?,
+            registration_start = ?, registration_end = ?,
+            open_notification_sent = ?, plus_one_notification_sent = ?, completed_notification_sent = ?
+        WHERE id = ?
+    """, (
+        title,
+        training_date,
+        training_time,
+        max_players,
+        registration_start,
+        registration_end,
+        new_open_notification_sent,
+        new_plus_one_notification_sent,
+        new_completed_notification_sent,
+        training_id
+    ))
+
+    db.commit()
+    db.close()
+
+    return redirect(url_for("admin_training_detail", training_id=training_id))
+
+@app.route("/admin/training/<int:training_id>/remove-registration/<int:registration_id>")
+@admin_required
+def admin_remove_registration(training_id, registration_id):
+    db = get_db()
+    cursor = db.cursor()
+
+    registration = cursor.execute("""
+        SELECT * FROM registrations WHERE id = ?
+    """, (registration_id,)).fetchone()
+
+    if not registration:
+        db.close()
+        return redirect(url_for("admin_training_detail", training_id=training_id))
+
+    removed_status = registration["status"]
+
+    training = cursor.execute("""
+        SELECT * FROM trainings WHERE id = ?
+    """, (training_id,)).fetchone()
+
+    if registration["is_plus_one"] == 0:
+        cursor.execute("""
+            DELETE FROM registrations
+            WHERE parent_registration_id = ? AND is_plus_one = 1
+        """, (registration["id"],))
+
+    cursor.execute("""
+        DELETE FROM registrations WHERE id = ?
+    """, (registration_id,))
+    db.commit()
+
+    if removed_status == "active":
+        active_count = cursor.execute("""
+            SELECT COUNT(*) as count FROM registrations
+            WHERE training_id = ? AND status = 'active'
+        """, (training_id,)).fetchone()["count"]
+
+        while active_count < training["max_players"]:
+            next_user = cursor.execute("""
+                SELECT r.*, u.email
+                FROM registrations r
+                JOIN users u ON u.id = r.user_id
+                WHERE r.training_id = ? AND r.status = 'waitlist'
+                ORDER BY r.created_at ASC
+                LIMIT 1
+            """, (training_id,)).fetchone()
+
+            if not next_user:
+                break
+
+            cursor.execute("""
+                UPDATE registrations
+                SET status = 'active'
+                WHERE id = ?
+            """, (next_user["id"],))
+            db.commit()
+
+            try:
+                send_push_to_user_tokens(
+                    next_user["user_id"],
+                    "Вы в основном составе",
+                    f"{training['title']} — {training['training_date']} {training['training_time']}",
+                    "/"
+                )
+            except Exception as e:
+                print("ADMIN REMOVE REG PUSH ERROR:", repr(e))
+
+            active_count += 1
+
+    db.close()
+    return redirect(url_for("admin_training_detail", training_id=training_id))
+
 if __name__ == "__main__":
     app.run(debug=True)
