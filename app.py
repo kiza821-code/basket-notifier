@@ -1733,6 +1733,19 @@ def debug_time():
         f"server_now_naive={datetime.now().isoformat()}"
     )
 
+@app.route("/debug/test-payment-push/tuesday/<int:user_id>")
+def debug_test_payment_push_tuesday(user_id):
+    try:
+        send_push_to_user_tokens(
+            user_id,
+            "Не забудь оплатить тренировку 💳",
+            "Перейди, чтобы оплатить",
+            "/payment/tuesday"
+        )
+        return "tuesday push sent", 200
+    except Exception as e:
+        return f"error: {repr(e)}", 500
+
 @app.route("/debug/payment-links")
 @login_required
 def debug_payment_links():
