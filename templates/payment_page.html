@@ -5,19 +5,145 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ payment_title }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .payment-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px;
+        }
+
+        .payment-card {
+            width: 100%;
+            max-width: 620px;
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 28px;
+            box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18);
+            padding: 32px 28px;
+            text-align: center;
+        }
+
+        .payment-icon {
+            font-size: 54px;
+            margin-bottom: 14px;
+        }
+
+        .payment-title {
+            margin: 0 0 14px;
+            font-size: 40px;
+            line-height: 1.1;
+            font-weight: 800;
+            color: #0b1635;
+        }
+
+        .payment-text {
+            margin: 0 auto 26px;
+            max-width: 500px;
+            font-size: 22px;
+            line-height: 1.5;
+            color: #31456b;
+        }
+
+        .payment-link-box {
+            background: #f3f7ff;
+            border: 1px solid #d9e4ff;
+            border-radius: 18px;
+            padding: 18px 16px;
+            margin-bottom: 24px;
+        }
+
+        .payment-link-label {
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #5870a3;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .payment-link-value {
+            font-size: 15px;
+            line-height: 1.5;
+            color: #1f3561;
+            word-break: break-all;
+        }
+
+        .payment-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .payment-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 52px;
+            padding: 0 20px;
+            border-radius: 16px;
+            font-size: 17px;
+            font-weight: 800;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.15s ease, opacity 0.15s ease;
+        }
+
+        .payment-btn:hover {
+            transform: translateY(-1px);
+            opacity: 0.96;
+        }
+
+        .payment-btn-primary {
+            background: #2f67e8;
+            color: white;
+        }
+
+        .payment-btn-secondary {
+            background: #0b1635;
+            color: white;
+        }
+
+        @media (max-width: 640px) {
+            .payment-card {
+                padding: 24px 18px;
+                border-radius: 22px;
+            }
+
+            .payment-title {
+                font-size: 30px;
+            }
+
+            .payment-text {
+                font-size: 18px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <h1>{{ payment_title }}</h1>
-            <p>{{ payment_text }}</p>
+    <div class="payment-page">
+        <div class="payment-card">
+            <div class="payment-icon">💳</div>
 
-            <a href="{{ payment_link }}" class="btn btn-primary" target="_blank">
-                Перейти к оплате
-            </a>
+            <h1 class="payment-title">{{ payment_title }}</h1>
 
-            <div style="margin-top: 20px;">
-                <a href="{{ url_for('index') }}" class="btn">Назад на главную</a>
+            <p class="payment-text">{{ payment_text }}</p>
+
+            <div class="payment-link-box">
+                <div class="payment-link-label">Ссылка для оплаты</div>
+                <div class="payment-link-value">{{ payment_link }}</div>
+            </div>
+
+            <div class="payment-actions">
+                <a href="{{ payment_link }}" class="payment-btn payment-btn-primary" target="_blank" rel="noopener noreferrer">
+                    Перейти к оплате
+                </a>
+
+                <a href="{{ url_for('index') }}" class="payment-btn payment-btn-secondary">
+                    Назад на главную
+                </a>
             </div>
         </div>
     </div>

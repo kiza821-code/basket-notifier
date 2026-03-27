@@ -46,6 +46,7 @@ FIREBASE_SERVICE_ACCOUNT_FILE = os.environ.get(
 
 PAYMENT_LINK_TUESDAY = os.environ.get("PAYMENT_LINK_TUESDAY", "")
 PAYMENT_LINK_THURSDAY = os.environ.get("PAYMENT_LINK_THURSDAY", "")
+PAYMENT_LINK_FRIDAY = os.environ.get("PAYMENT_LINK_FRIDAY", "")
 
 BASE_URL = os.environ.get("BASE_URL", "https://basketapp.ru")
 
@@ -418,6 +419,9 @@ def get_payment_page_url(training):
     if weekday == 3:  # Четверг
         return "/payment/thursday"
 
+    if weekday == 4:  # Пятница
+        return "/payment/friday"
+
     return "/"
 
 def get_payment_reminder_text(training):
@@ -755,7 +759,7 @@ def payment_tuesday():
     return render_template(
         "payment_page.html",
         payment_title="Оплата тренировки во вторник",
-        payment_text="Оплатите 200 ₽ на номер 89138462207 (Сбер).",
+        payment_text="Оплатите 200 ₽ по ссылке.",
         payment_link=PAYMENT_LINK_TUESDAY
     )
 
@@ -766,8 +770,18 @@ def payment_thursday():
     return render_template(
         "payment_page.html",
         payment_title="Оплата тренировки в четверг",
-        payment_text="Оплатите 200 ₽ на номер 89627830203 (Сбер).",
+        payment_text="Оплатите 200 ₽ по ссылке.",
         payment_link=PAYMENT_LINK_THURSDAY
+    )
+
+@app.route("/payment/friday")
+@login_required
+def payment_friday():
+    return render_template(
+        "payment_page.html",
+        payment_title="Оплата тренировки в пятницу",
+        payment_text="Оплатите 200 ₽ по ссылке ниже.",
+        payment_link=PAYMENT_LINK_FRIDAY
     )
 
 @app.route("/tasks/check-open-notifications")
