@@ -1060,6 +1060,9 @@ def delete_user(user_id):
             "Нельзя удалить администратора."
         )
 
+    deleted_email = user_to_delete["email"]
+    deleted_name = user_to_delete["display_name"]
+
     # Находим все записи пользователя
     registrations = cursor.execute("""
         SELECT * FROM registrations
