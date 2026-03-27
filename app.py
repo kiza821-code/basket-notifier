@@ -44,6 +44,9 @@ FIREBASE_SERVICE_ACCOUNT_FILE = os.environ.get(
     "/var/www/basket_app/firebase-service-account.json"
 )
 
+PAYMENT_LINK_TUESDAY = os.environ.get("PAYMENT_LINK_TUESDAY", "")
+PAYMENT_LINK_THURSDAY = os.environ.get("PAYMENT_LINK_THURSDAY", "")
+
 BASE_URL = os.environ.get("BASE_URL", "https://basketapp.ru")
 
 def now_local():
@@ -136,6 +139,12 @@ def init_db():
             ALTER TABLE trainings
             ADD COLUMN plus_one_notification_sent INTEGER NOT NULL DEFAULT 0
         """)
+
+    if "completed_notification_sent" not in training_columns:
+        cursor.execute("""
+                ALTER TABLE trainings
+                ADD COLUMN completed_notification_sent INTEGER NOT NULL DEFAULT 0
+            """)
 
     admin = cursor.execute("""
         SELECT * FROM users WHERE email = ?
@@ -375,9 +384,32 @@ def get_registration_status(training):
 def get_training_datetime(training):
     return parse_local_datetime(training["training_date"], training["training_time"])
 
+def get_payment_page_url(training):
+    training_dt = get_training_datetime(training)
+    weekday = training_dt.weekday()  # Monday=0, Tuesday=1, Thursday=3
+
+    if weekday == 1:  # Вторник
+        return "/payment/tuesday"
+
+    if weekday == 3:  # Четверг
+        return "/payment/thursday"
+
+    return "/"
+
+def get_payment_reminder_text(training):
+    training_dt = get_training_datetime(training)
+    weekday = training_dt.weekday()  # Monday=0, Tuesday=1, Thursday=3
+
+    if weekday == 1:  # Вторник
+        return "Не забудь оплатить тренировку. 200р на номер 89138462207, Сбер"
+
+    if weekday == 3:  # Четверг
+        return "Не забудь оплатить тренировку. 200р на номер 89627830203, Сбер"
+
+    return "Не забудь оплатить тренировку."
 
 def is_training_finished(training):
-    return now_local() > get_training_datetime(training)
+    return now_local() > get_training_datetime(training) + timedelta(hours=3)
 
 
 def can_plus_one_be_added(training, active_count):
@@ -389,6 +421,82 @@ def can_plus_one_be_added(training, active_count):
 
     return within_12_hours and before_training and active_count < training["max_players"]
 
+def notify_completed_trainings():
+    db = get_db()
+    cursor = db.cursor()
+
+    trainings = cursor.execute("""
+        SELECT * FROM trainings
+        WHERE completed_notification_sent = 0
+        ORDER BY training_date ASC, training_time ASC
+    """).fetchall()
+
+    admins = cursor.execute("""
+        SELECT * FROM users
+        WHERE is_admin = 1 AND status = 'approved'
+    """).fetchall()
+
+    for training in trainings:
+        training_dt = get_training_datetime(training)
+        finish_dt = training_dt + timedelta(hours=3)
+
+        if now_local() >= finish_dt:
+            active_players = cursor.execute("""
+                SELECT r.*, u.email
+                FROM registrations r
+                JOIN users u ON u.id = r.user_id
+                WHERE r.training_id = ?
+                  AND r.status = 'active'
+                ORDER BY r.created_at ASC
+            """, (training["id"],)).fetchall()
+
+            # Собираем письмо админу с полным составом
+            if active_players:
+                players_lines = []
+                for idx, player in enumerate(active_players, start=1):
+                    players_lines.append(f"{idx}. {player['display_name']} ({player['email']})")
+                players_text = "\n".join(players_lines)
+            else:
+                players_text = "Никто не был записан в основной состав."
+
+            subject = f"Состав участников: {training['title']} {training['training_date']} {training['training_time']}"
+            body = (
+                f"Тренировка завершена.\n\n"
+                f"Название: {training['title']}\n"
+                f"Дата: {training['training_date']}\n"
+                f"Время: {training['training_time']}\n\n"
+                f"Основной состав:\n{players_text}"
+            )
+
+            for admin in admins:
+                try:
+                    send_email(admin["email"], subject, body)
+                except Exception as e:
+                    print("COMPLETED ADMIN EMAIL ERROR:", repr(e))
+
+            # Пуш всем из основного состава
+            payment_page_url = get_payment_page_url(training)
+
+            for player in active_players:
+                try:
+                    send_push_to_user_tokens(
+                        player["user_id"],
+                        "Напоминание об оплате",
+                        "Не забудь оплатить тренировку",
+                        payment_page_url
+                    )
+                except Exception as e:
+                    print("COMPLETED PLAYER PUSH ERROR:", repr(e))
+
+            # Помечаем тренировку как обработанную
+            cursor.execute("""
+                UPDATE trainings
+                SET completed_notification_sent = 1
+                WHERE id = ?
+            """, (training["id"],))
+
+    db.commit()
+    db.close()
 
 def notify_open_trainings():
     db = get_db()
@@ -586,6 +694,26 @@ def admin_panel():
         trainings=trainings
     )
 
+@app.route("/payment/tuesday")
+@login_required
+def payment_tuesday():
+    return render_template(
+        "payment_page.html",
+        payment_title="Оплата тренировки во вторник",
+        payment_text="Оплатите 200 ₽ на номер 89138462207 (Сбер).",
+        payment_link=PAYMENT_LINK_TUESDAY
+    )
+
+
+@app.route("/payment/thursday")
+@login_required
+def payment_thursday():
+    return render_template(
+        "payment_page.html",
+        payment_title="Оплата тренировки в четверг",
+        payment_text="Оплатите 200 ₽ на номер 89627830203 (Сбер).",
+        payment_link=PAYMENT_LINK_THURSDAY
+    )
 
 @app.route("/tasks/check-open-notifications")
 def check_open_notifications():
@@ -608,6 +736,7 @@ def run_all_tasks():
 
     notify_open_trainings()
     notify_plus_one_available()
+    notify_completed_trainings()
 
     return "ok", 200
 
@@ -1194,9 +1323,9 @@ def create_training():
         INSERT INTO trainings (
             title, training_date, training_time, max_players,
             registration_start, registration_end,
-            open_notification_sent, plus_one_notification_sent
+            open_notification_sent, plus_one_notification_sent, completed_notification_sent
         )
-        VALUES (?, ?, ?, ?, ?, ?, 0, 0)
+        VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0)
     """, (
         title,
         training_date,
@@ -1329,7 +1458,7 @@ def generate_schedule():
     cursor = db.cursor()
 
     today = now_local().date()
-    days_ahead = 30
+    days_ahead = 7
     created = 0
 
     for i in range(days_ahead):
@@ -1358,11 +1487,11 @@ def generate_schedule():
                     INSERT INTO trainings (
                         title, training_date, training_time, max_players,
                         registration_start, registration_end,
-                        open_notification_sent, plus_one_notification_sent
+                        open_notification_sent, plus_one_notification_sent, completed_notification_sent
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, 0, 0)
+                    VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0)
                 """, (
-                    "Баскетбольная тренировка",
+                    "ТГАСУ/Партизанская 16",
                     training_date,
                     training_time,
                     15,
