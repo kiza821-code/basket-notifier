@@ -1651,5 +1651,14 @@ def debug_time():
         f"server_now_naive={datetime.now().isoformat()}"
     )
 
+@app.route("/debug/payment-links")
+@login_required
+def debug_payment_links():
+    return render_template(
+        "debug_payment_links.html",
+        tuesday_url="/payment/tuesday",
+        thursday_url="/payment/thursday"
+    )
+
 if __name__ == "__main__":
     app.run(debug=True)
