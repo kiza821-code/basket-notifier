@@ -2,3 +2,4 @@ flask
 werkzeug
 firebase-admin
 gunicorn
+python-dotenv

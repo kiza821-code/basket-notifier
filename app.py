@@ -9,36 +9,42 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import firebase_admin
 from firebase_admin import credentials, messaging
+import os
+from dotenv import load_dotenv
 
 app = Flask(__name__)
-app.secret_key = "super_secret_key_12345"
-TASK_SECRET = "basketapp_super_secret_123"
+load_dotenv()
 
+app.secret_key = os.environ.get("SECRET_KEY", "dev_secret_key")
+TASK_SECRET = os.environ.get("TASK_SECRET", "dev_task_secret")
 
 APP_TZ = ZoneInfo("Asia/Novosibirsk")
 
 # Первый админ создаётся автоматически при старте, если его ещё нет
-ADMIN_EMAIL = "admin@example.com"
-ADMIN_PASSWORD = "12345"
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@example.com")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "12345")
 
-# Gmail SMTP
-EMAIL_HOST = "smtp.mail.ru"
-EMAIL_PORT = 465
-EMAIL_ADDRESS = "basketapp@mail.ru"
-EMAIL_PASSWORD = "OIhdPTOxWLRXN32O1JUO"
+# Mail SMTP
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.mail.ru")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "465"))
+EMAIL_ADDRESS = os.environ.get("EMAIL_ADDRESS", "")
+EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD", "")
 
 # Firebase web config
-FIREBASE_API_KEY = "AIzaSyD89nzI1hfe5KpqoQ2SBofIk7gju2EK78M"
-FIREBASE_AUTH_DOMAIN = "basket-training-app.firebaseapp.com"
-FIREBASE_PROJECT_ID = "basket-training-app"
-FIREBASE_MESSAGING_SENDER_ID = "44535672611"
-FIREBASE_APP_ID = "1:44535672611:web:b3990a50f2aefdec9ae696"
-FIREBASE_VAPID_KEY = "BDKbWkhUbgcmXmOL3flbwWNeIdZ92B-lBPjgcNreUCx_aXRajSOa0wno6EAPipWlgwj5wv1NhJtlQ3MvHO5xrws"
+FIREBASE_API_KEY = os.environ.get("FIREBASE_API_KEY", "")
+FIREBASE_AUTH_DOMAIN = os.environ.get("FIREBASE_AUTH_DOMAIN", "")
+FIREBASE_PROJECT_ID = os.environ.get("FIREBASE_PROJECT_ID", "")
+FIREBASE_MESSAGING_SENDER_ID = os.environ.get("FIREBASE_MESSAGING_SENDER_ID", "")
+FIREBASE_APP_ID = os.environ.get("FIREBASE_APP_ID", "")
+FIREBASE_VAPID_KEY = os.environ.get("FIREBASE_VAPID_KEY", "")
 
 # Firebase admin
-FIREBASE_SERVICE_ACCOUNT_FILE = "firebase-service-account.json"
+FIREBASE_SERVICE_ACCOUNT_FILE = os.environ.get(
+    "FIREBASE_SERVICE_ACCOUNT_FILE",
+    "/var/www/basket_app/firebase-service-account.json"
+)
 
-BASE_URL = "https://basketapp.ru"
+BASE_URL = os.environ.get("BASE_URL", "https://basketapp.ru")
 
 def now_local():
     return datetime.now(APP_TZ)
