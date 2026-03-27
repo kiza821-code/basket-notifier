@@ -1,6 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory, abort
 import sqlite3
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 import smtplib
@@ -11,8 +12,10 @@ from firebase_admin import credentials, messaging
 
 app = Flask(__name__)
 app.secret_key = "super_secret_key_12345"
+TASK_SECRET = "basketapp_super_secret_123"
 
-APP_TZ = timezone(timedelta(hours=0))
+
+APP_TZ = ZoneInfo("Asia/Novosibirsk")
 
 # Первый админ создаётся автоматически при старте, если его ещё нет
 ADMIN_EMAIL = "admin@example.com"
@@ -589,8 +592,14 @@ def check_plus_one_notifications():
 
 @app.route("/tasks/run-all")
 def run_all_tasks():
+    key = request.args.get("key", "")
+
+    if key != TASK_SECRET:
+        abort(403)
+
     notify_open_trainings()
     notify_plus_one_available()
+
     return "ok", 200
 
 
@@ -1464,6 +1473,15 @@ def debug_send_test_email():
     )
     return "email sent"
 
+
+@app.route("/debug/time")
+def debug_time():
+    now = now_local()
+    return (
+        f"app_now={now.isoformat()}<br>"
+        f"app_tz={APP_TZ}<br>"
+        f"server_now_naive={datetime.now().isoformat()}"
+    )
 
 if __name__ == "__main__":
     app.run(debug=True)
