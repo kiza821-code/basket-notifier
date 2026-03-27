@@ -392,6 +392,22 @@ def get_registration_status(training):
 def get_training_datetime(training):
     return parse_local_datetime(training["training_date"], training["training_time"])
 
+
+def is_training_hidden_for_users(training):
+    """
+    Скрываем тренировку с главной для обычных пользователей,
+    когда время тренировки уже наступило.
+    """
+    return now_local() >= get_training_datetime(training)
+
+
+def is_training_expired_for_admin(training):
+    """
+    Через 14 дней после начала тренировки она считается устаревшей
+    и может быть удалена из базы.
+    """
+    return now_local() >= get_training_datetime(training) + timedelta(days=14)
+
 def get_payment_page_url(training):
     training_dt = get_training_datetime(training)
     weekday = training_dt.weekday()  # Monday=0, Tuesday=1, Thursday=3
@@ -419,6 +435,33 @@ def get_payment_reminder_text(training):
 def is_training_finished(training):
     return now_local() > get_training_datetime(training) + timedelta(hours=3)
 
+def cleanup_old_trainings():
+    db = get_db()
+    cursor = db.cursor()
+
+    trainings = cursor.execute("""
+        SELECT * FROM trainings
+        ORDER BY training_date ASC, training_time ASC
+    """).fetchall()
+
+    deleted_count = 0
+
+    for training in trainings:
+        if is_training_expired_for_admin(training):
+            cursor.execute("""
+                DELETE FROM registrations WHERE training_id = ?
+            """, (training["id"],))
+
+            cursor.execute("""
+                DELETE FROM trainings WHERE id = ?
+            """, (training["id"],))
+
+            deleted_count += 1
+
+    db.commit()
+    db.close()
+
+    print(f"CLEANUP: deleted old trainings = {deleted_count}")
 
 def can_plus_one_be_added(training, active_count):
     training_dt = get_training_datetime(training)
@@ -614,10 +657,12 @@ def index():
     db = get_db()
     cursor = db.cursor()
 
-    trainings = cursor.execute("""
+    all_trainings = cursor.execute("""
         SELECT * FROM trainings
         ORDER BY training_date ASC, training_time ASC
     """).fetchall()
+
+    trainings = [t for t in all_trainings if not is_training_hidden_for_users(t)]
 
     trainings_data = []
 
@@ -687,10 +732,12 @@ def admin_panel():
         ORDER BY created_at ASC
     """).fetchall()
 
-    trainings = cursor.execute("""
+    all_trainings = cursor.execute("""
         SELECT * FROM trainings
-        ORDER BY training_date ASC, training_time ASC
+        ORDER BY training_date DESC, training_time DESC
     """).fetchall()
+
+    trainings = [t for t in all_trainings if not is_training_expired_for_admin(t)]
 
     db.close()
 
@@ -745,6 +792,7 @@ def run_all_tasks():
     notify_open_trainings()
     notify_plus_one_available()
     notify_completed_trainings()
+    cleanup_old_trainings()
 
     return "ok", 200
 
@@ -1707,6 +1755,13 @@ def admin_training_detail(training_id):
     if not training:
         db.close()
         return render_message_page("Не найдено", "Тренировка не найдена.")
+
+    if is_training_expired_for_admin(training):
+        db.close()
+        return render_message_page(
+            "Архив удалён",
+            "Эта тренировка старше 14 дней и больше недоступна."
+        )
 
     active_players = cursor.execute("""
         SELECT r.*, u.email
