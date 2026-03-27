@@ -146,6 +146,14 @@ def init_db():
                 ADD COLUMN completed_notification_sent INTEGER NOT NULL DEFAULT 0
             """)
 
+    registration_columns = [row[1] for row in cursor.execute("PRAGMA table_info(registrations)").fetchall()]
+
+    if "is_paid" not in registration_columns:
+        cursor.execute("""
+            ALTER TABLE registrations
+            ADD COLUMN is_paid INTEGER NOT NULL DEFAULT 0
+        """)
+
     admin = cursor.execute("""
         SELECT * FROM users WHERE email = ?
     """, (ADMIN_EMAIL,)).fetchone()
@@ -908,9 +916,9 @@ def register_training(training_id):
 
     cursor.execute("""
         INSERT INTO registrations (
-            training_id, user_id, display_name, status, created_at, is_plus_one, parent_registration_id
+            training_id, user_id, display_name, status, created_at, is_plus_one, parent_registration_id, is_paid
         )
-        VALUES (?, ?, ?, ?, ?, 0, NULL)
+        VALUES (?, ?, ?, ?, ?, 0, NULL, 0)
     """, (
         training_id,
         user["id"],
@@ -1073,9 +1081,9 @@ def add_plus_one(training_id):
 
     cursor.execute("""
         INSERT INTO registrations (
-            training_id, user_id, display_name, status, created_at, is_plus_one, parent_registration_id
+            training_id, user_id, display_name, status, created_at, is_plus_one, parent_registration_id, is_paid
         )
-        VALUES (?, ?, ?, 'active', ?, 1, ?)
+        VALUES (?, ?, ?, 'active', ?, 1, ?, 0)
     """, (
         training_id,
         user["id"],
@@ -1508,6 +1516,32 @@ def generate_schedule():
         f"Добавлено тренировок: {created}"
     )
 
+@app.route("/admin/toggle-payment/<int:registration_id>")
+@admin_required
+def toggle_payment(registration_id):
+    db = get_db()
+    cursor = db.cursor()
+
+    registration = cursor.execute("""
+        SELECT * FROM registrations WHERE id = ?
+    """, (registration_id,)).fetchone()
+
+    if not registration:
+        db.close()
+        return redirect(url_for("admin_panel"))
+
+    new_value = 0 if registration["is_paid"] == 1 else 1
+
+    cursor.execute("""
+        UPDATE registrations
+        SET is_paid = ?
+        WHERE id = ?
+    """, (new_value, registration_id))
+
+    db.commit()
+    db.close()
+
+    return redirect(request.referrer or url_for("admin_panel"))
 
 @app.route("/debug/all-users")
 def debug_all_users():
