@@ -78,12 +78,45 @@
 
                     <section class="training-card">
                         <div class="training-top">
-                            <div>
-                                <h2>{{ training["title"] }}</h2>
-                                <p class="training-meta">
-                                    📅 Тренировка: {{ training["training_date"] }} &nbsp;&nbsp; 🕒 {{ training["training_time"] }}
-                                </p>
+                            <div class="training-main-info">
+                                <div class="training-calendar">
+                                    <div class="training-calendar-top"></div>
+                                    <div class="training-calendar-day">{{ training["training_date"][8:10] }}</div>
+                                    <div class="training-calendar-month">
+                                        {% set month_num = training["training_date"][5:7] %}
+                                        {% if month_num == "01" %}января
+                                        {% elif month_num == "02" %}февраля
+                                        {% elif month_num == "03" %}марта
+                                        {% elif month_num == "04" %}апреля
+                                        {% elif month_num == "05" %}мая
+                                        {% elif month_num == "06" %}июня
+                                        {% elif month_num == "07" %}июля
+                                        {% elif month_num == "08" %}августа
+                                        {% elif month_num == "09" %}сентября
+                                        {% elif month_num == "10" %}октября
+                                        {% elif month_num == "11" %}ноября
+                                        {% elif month_num == "12" %}декабря
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="training-title-wrap">
+                                    <h2>{{ training["title"] }}</h2>
+                                    <p class="training-meta">
+                                        <span class="training-date-text">
+                                            {% set date_obj = training["training_date"] %}
+                                            {% set weekday_num = training["training_date"] %}
+                                            {{ training["training_date"] }}
+                                        </span>
+                                    </p>
+                                </div>
                             </div>
+
+                            <div class="training-time-pill">
+                                <span class="training-time-icon">🕒</span>
+                                <span>{{ training["training_time"] }}</span>
+                            </div>
+                        </div>
 
                             <div class="training-badges">
                                 <span class="badge badge-blue">Мест: {{ players|length }}/{{ training["max_players"] }}</span>
