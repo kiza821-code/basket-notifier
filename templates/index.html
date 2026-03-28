@@ -68,148 +68,127 @@
 
         {% else %}
             {% if trainings_data %}
-                <div class="training-slider-section">
-                    <div class="training-slider-head">
-                        <h2 class="training-slider-title">Ближайшие тренировки</h2>
+                {% for item in trainings_data %}
+                    {% set training = item.training %}
+                    {% set players = item.players %}
+                    {% set waitlist = item.waitlist %}
+                    {% set registration_status = item.registration_status %}
+                    {% set plus_one_available = item.plus_one_available %}
+                    {% set current_user_registration = item.current_user_registration %}
 
-                        <div class="training-slider-controls">
-                            <button class="slider-nav-btn" type="button" id="prevTrainingBtn">‹</button>
-                            <button class="slider-nav-btn" type="button" id="nextTrainingBtn">›</button>
+                    <section class="training-card">
+                        <div class="training-top">
+                            <div>
+                                <h2>{{ training["title"] }}</h2>
+                                <p class="training-meta">
+                                    📅 Тренировка: {{ training["training_date"] }} &nbsp;&nbsp; 🕒 {{ training["training_time"] }}
+                                </p>
+                            </div>
+
+                            <div class="training-badges">
+                                <span class="badge badge-blue">Мест: {{ players|length }}/{{ training["max_players"] }}</span>
+
+                                {% if registration_status == "open" %}
+                                    <span class="badge badge-green">Запись открыта</span>
+                                {% elif registration_status == "not_started" %}
+                                    <span class="badge badge-orange">Запись ещё не началась</span>
+                                {% else %}
+                                    <span class="badge badge-red">Запись закрыта</span>
+                                {% endif %}
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="training-slider" id="trainingSlider">
-                        {% for item in trainings_data %}
-                            {% set training = item.training %}
-                            {% set players = item.players %}
-                            {% set waitlist = item.waitlist %}
-                            {% set registration_status = item.registration_status %}
-                            {% set plus_one_available = item.plus_one_available %}
-                            {% set current_user_registration = item.current_user_registration %}
+                        {% if not current_user_registration and registration_status == "open" %}
+                            <form method="POST" action="{{ url_for('register_training', training_id=training['id']) }}" class="register-form">
+                                <button type="submit" class="register-btn">Записаться</button>
+                            </form>
+                        {% elif current_user_registration %}
+                            <div class="closed-box">
+                                Вы уже записаны на эту тренировку.
+                            </div>
+                        {% elif registration_status == "not_started" %}
+                            <div class="closed-box">
+                                Запись ещё не началась.
+                            </div>
+                        {% else %}
+                            <div class="closed-box">
+                                Время записи на эту тренировку уже закончилось.
+                            </div>
+                        {% endif %}
 
-                            <section class="training-slide">
-                                <section class="training-card">
-                                    <div class="training-top">
-                                        <div>
-                                            <h2>{{ training["title"] }}</h2>
-                                            <p class="training-meta">
-                                                📅 Тренировка: {{ training["training_date"] }} &nbsp;&nbsp; 🕒 {{ training["training_time"] }}
-                                            </p>
-                                        </div>
+                        <div class="lists">
+                            <div class="list-card">
+                                <div class="card-header">
+                                    <h3>Основной состав</h3>
+                                    <span class="badge badge-green">{{ players|length }}</span>
+                                </div>
 
-                                        <div class="training-badges">
-                                            <span class="badge badge-blue">Мест: {{ players|length }}/{{ training["max_players"] }}</span>
+                                {% if players %}
+                                    <ul class="player-list">
+                                        {% for p in players %}
+                                            <li class="player-item">
+                                                <div class="player-info">
+                                                    <span class="player-name">{{ p["display_name"] }}</span>
+                                                    <span class="player-status active-status">
+                                                        {% if p["is_plus_one"] == 1 %}
+                                                            Добавлен по +1
+                                                        {% else %}
+                                                            Подтверждён
+                                                        {% endif %}
+                                                    </span>
+                                                </div>
 
-                                            {% if registration_status == "open" %}
-                                                <span class="badge badge-green">Запись открыта</span>
-                                            {% elif registration_status == "not_started" %}
-                                                <span class="badge badge-orange">Запись ещё не началась</span>
-                                            {% else %}
-                                                <span class="badge badge-red">Запись закрыта</span>
-                                            {% endif %}
-                                        </div>
-                                    </div>
+                                                <div class="player-actions">
+                                                    {% if p["user_id"] == user["id"] and p["is_plus_one"] == 0 and plus_one_available %}
+                                                        <form method="POST" action="{{ url_for('add_plus_one', training_id=training['id']) }}">
+                                                            <button type="submit" class="plus-one-btn">+1</button>
+                                                        </form>
+                                                    {% endif %}
 
-                                    {% if not current_user_registration and registration_status == "open" %}
-                                        <form method="POST" action="{{ url_for('register_training', training_id=training['id']) }}" class="register-form">
-                                            <button type="submit" class="register-btn">Записаться</button>
-                                        </form>
-                                    {% elif current_user_registration %}
-                                        <div class="closed-box">
-                                            Вы уже записаны на эту тренировку.
-                                        </div>
-                                    {% elif registration_status == "not_started" %}
-                                        <div class="closed-box">
-                                            Запись ещё не началась.
-                                        </div>
-                                    {% else %}
-                                        <div class="closed-box">
-                                            Время записи на эту тренировку уже закончилось.
-                                        </div>
-                                    {% endif %}
+                                                    {% if p["user_id"] == user["id"] %}
+                                                        <form method="POST" action="{{ url_for('cancel', registration_id=p['id']) }}">
+                                                            <button type="submit" class="cancel-btn">Отменить</button>
+                                                        </form>
+                                                    {% endif %}
+                                                </div>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <p class="empty-text">Пока никто не записался.</p>
+                                {% endif %}
+                            </div>
 
-                                    <div class="lists">
-                                        <div class="list-card">
-                                            <div class="card-header">
-                                                <h3>Основной состав</h3>
-                                                <span class="badge badge-green">{{ players|length }}</span>
-                                            </div>
+                            <div class="list-card">
+                                <div class="card-header">
+                                    <h3>Живая очередь</h3>
+                                    <span class="badge badge-orange">{{ waitlist|length }}</span>
+                                </div>
 
-                                            {% if players %}
-                                                <ul class="player-list">
-                                                    {% for p in players %}
-                                                        <li class="player-item">
-                                                            <div class="player-info">
-                                                                <span class="player-name">{{ p["display_name"] }}</span>
-                                                                <span class="player-status active-status">
-                                                                    {% if p["is_plus_one"] == 1 %}
-                                                                        Добавлен по +1
-                                                                    {% else %}
-                                                                        Подтверждён
-                                                                    {% endif %}
-                                                                </span>
-                                                            </div>
+                                {% if waitlist %}
+                                    <ul class="player-list">
+                                        {% for p in waitlist %}
+                                            <li class="player-item">
+                                                <div class="player-info">
+                                                    <span class="player-name">{{ loop.index }}. {{ p["display_name"] }}</span>
+                                                    <span class="player-status wait-status">Ожидает место</span>
+                                                </div>
 
-                                                            <div class="player-actions">
-                                                                {% if p["user_id"] == user["id"] and p["is_plus_one"] == 0 and plus_one_available %}
-                                                                    <form method="POST" action="{{ url_for('add_plus_one', training_id=training['id']) }}">
-                                                                        <button type="submit" class="plus-one-btn">+1</button>
-                                                                    </form>
-                                                                {% endif %}
-
-                                                                {% if p["user_id"] == user["id"] %}
-                                                                    <form method="POST" action="{{ url_for('cancel', registration_id=p['id']) }}">
-                                                                        <button type="submit" class="cancel-btn">Отменить</button>
-                                                                    </form>
-                                                                {% endif %}
-                                                            </div>
-                                                        </li>
-                                                    {% endfor %}
-                                                </ul>
-                                            {% else %}
-                                                <p class="empty-text">Пока никто не записался.</p>
-                                            {% endif %}
-                                        </div>
-
-                                        <div class="list-card">
-                                            <div class="card-header">
-                                                <h3>Живая очередь</h3>
-                                                <span class="badge badge-orange">{{ waitlist|length }}</span>
-                                            </div>
-
-                                            {% if waitlist %}
-                                                <ul class="player-list">
-                                                    {% for p in waitlist %}
-                                                        <li class="player-item">
-                                                            <div class="player-info">
-                                                                <span class="player-name">{{ loop.index }}. {{ p["display_name"] }}</span>
-                                                                <span class="player-status wait-status">Ожидает место</span>
-                                                            </div>
-
-                                                            {% if p["user_id"] == user["id"] %}
-                                                                <form method="POST" action="{{ url_for('cancel', registration_id=p['id']) }}">
-                                                                    <button type="submit" class="cancel-btn">Отменить</button>
-                                                                </form>
-                                                            {% endif %}
-                                                        </li>
-                                                    {% endfor %}
-                                                </ul>
-                                            {% else %}
-                                                <p class="empty-text">Очередь пуста.</p>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </section>
-                            </section>
-                        {% endfor %}
-                    </div>
-
-                    <div class="training-slider-dots" id="trainingSliderDots">
-                        {% for item in trainings_data %}
-                            <button class="slider-dot {% if loop.first %}is-active{% endif %}" type="button" data-slide="{{ loop.index0 }}"></button>
-                        {% endfor %}
-                    </div>
-                </div>
+                                                {% if p["user_id"] == user["id"] %}
+                                                    <form method="POST" action="{{ url_for('cancel', registration_id=p['id']) }}">
+                                                        <button type="submit" class="cancel-btn">Отменить</button>
+                                                    </form>
+                                                {% endif %}
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <p class="empty-text">Очередь пуста.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </section>
+                {% endfor %}
             {% else %}
                 <div class="empty-training-box">
                     Пока нет созданных тренировок.
@@ -332,68 +311,6 @@
 
     if (pushBtn) {
         pushBtn.addEventListener("click", enablePushNotifications);
-    }
-</script>
-
-<script>
-    const trainingSlider = document.getElementById("trainingSlider");
-    const prevTrainingBtn = document.getElementById("prevTrainingBtn");
-    const nextTrainingBtn = document.getElementById("nextTrainingBtn");
-    const sliderDots = document.querySelectorAll(".slider-dot");
-
-    if (trainingSlider) {
-        const slides = trainingSlider.querySelectorAll(".training-slide");
-
-        function getCurrentSlideIndex() {
-            const slideWidth = trainingSlider.clientWidth;
-            if (!slideWidth) return 0;
-            return Math.round(trainingSlider.scrollLeft / slideWidth);
-        }
-
-        function scrollToSlide(index) {
-            const slideWidth = trainingSlider.clientWidth;
-            trainingSlider.scrollTo({
-                left: index * slideWidth,
-                behavior: "smooth"
-            });
-        }
-
-        function updateDots() {
-            const currentIndex = getCurrentSlideIndex();
-            sliderDots.forEach((dot, index) => {
-                dot.classList.toggle("is-active", index === currentIndex);
-            });
-        }
-
-        if (prevTrainingBtn) {
-            prevTrainingBtn.addEventListener("click", () => {
-                const currentIndex = getCurrentSlideIndex();
-                const nextIndex = Math.max(0, currentIndex - 1);
-                scrollToSlide(nextIndex);
-            });
-        }
-
-        if (nextTrainingBtn) {
-            nextTrainingBtn.addEventListener("click", () => {
-                const currentIndex = getCurrentSlideIndex();
-                const nextIndex = Math.min(slides.length - 1, currentIndex + 1);
-                scrollToSlide(nextIndex);
-            });
-        }
-
-        sliderDots.forEach((dot) => {
-            dot.addEventListener("click", () => {
-                const index = Number(dot.dataset.slide);
-                scrollToSlide(index);
-            });
-        });
-
-        trainingSlider.addEventListener("scroll", () => {
-            window.requestAnimationFrame(updateDots);
-        });
-
-        window.addEventListener("resize", updateDots);
-        updateDots();
     }
 </script>
 
