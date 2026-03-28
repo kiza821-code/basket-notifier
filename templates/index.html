@@ -88,7 +88,12 @@
                                 {% set plus_one_available = item.plus_one_available %}
                                 {% set current_user_registration = item.current_user_registration %}
 
-                                <article class="deck-card" data-index="{{ loop.index0 }}">
+                                <article
+                                    class="deck-card {% if loop.first %}is-active{% endif %}"
+                                    data-index="{{ loop.index0 }}"
+                                    data-training-id="{{ training['id'] }}"
+                                    data-title="{{ training['title'] }}"
+                                >
                                     <div class="deck-card-inner">
                                         <div class="deck-card-top">
                                             <div>
@@ -120,7 +125,7 @@
                                             <button
                                                 type="button"
                                                 class="open-training-btn"
-                                                data-toggle-details="{{ loop.index0 }}"
+                                                data-open-training="{{ loop.index0 }}"
                                             >
                                                 Открыть
                                             </button>
@@ -138,129 +143,138 @@
                     </div>
                 </section>
 
-                <section class="deck-details-section">
-                    {% for item in trainings_data %}
-                        {% set training = item.training %}
-                        {% set players = item.players %}
-                        {% set waitlist = item.waitlist %}
-                        {% set registration_status = item.registration_status %}
-                        {% set plus_one_available = item.plus_one_available %}
-                        {% set current_user_registration = item.current_user_registration %}
+                <div class="training-modal" id="trainingModal">
+                    <div class="training-modal-backdrop" id="trainingModalBackdrop"></div>
+                    <div class="training-modal-dialog">
+                        <button type="button" class="training-modal-close" id="trainingModalClose">×</button>
 
-                        <section class="training-card deck-details-pane {% if loop.first %}is-active{% endif %}" data-details-pane="{{ loop.index0 }}">
-                            <div class="training-top">
-                                <div>
-                                    <h2>{{ training["title"] }}</h2>
-                                    <p class="training-meta">
-                                        📅 Тренировка: {{ training["training_date"] }} &nbsp;&nbsp; 🕒 {{ training["training_time"] }}
-                                    </p>
-                                </div>
+                        <div class="training-modal-content">
+                            {% for item in trainings_data %}
+                                {% set training = item.training %}
+                                {% set players = item.players %}
+                                {% set waitlist = item.waitlist %}
+                                {% set registration_status = item.registration_status %}
+                                {% set plus_one_available = item.plus_one_available %}
+                                {% set current_user_registration = item.current_user_registration %}
 
-                                <div class="training-badges">
-                                    <span class="badge badge-blue">Мест: {{ players|length }}/{{ training["max_players"] }}</span>
+                                <section class="training-modal-pane" data-modal-pane="{{ loop.index0 }}">
+                                    <section class="training-card training-card-modal">
+                                        <div class="training-top">
+                                            <div>
+                                                <h2>{{ training["title"] }}</h2>
+                                                <p class="training-meta">
+                                                    📅 Тренировка: {{ training["training_date"] }} &nbsp;&nbsp; 🕒 {{ training["training_time"] }}
+                                                </p>
+                                            </div>
 
-                                    {% if registration_status == "open" %}
-                                        <span class="badge badge-green">Запись открыта</span>
-                                    {% elif registration_status == "not_started" %}
-                                        <span class="badge badge-orange">Запись ещё не началась</span>
-                                    {% else %}
-                                        <span class="badge badge-red">Запись закрыта</span>
-                                    {% endif %}
-                                </div>
-                            </div>
+                                            <div class="training-badges">
+                                                <span class="badge badge-blue">Мест: {{ players|length }}/{{ training["max_players"] }}</span>
 
-                            {% if not current_user_registration and registration_status == "open" %}
-                                <form method="POST" action="{{ url_for('register_training', training_id=training['id']) }}" class="register-form">
-                                    <button type="submit" class="register-btn">Записаться</button>
-                                </form>
-                            {% elif current_user_registration %}
-                                <div class="closed-box">
-                                    Вы уже записаны на эту тренировку.
-                                </div>
-                            {% elif registration_status == "not_started" %}
-                                <div class="closed-box">
-                                    Запись ещё не началась.
-                                </div>
-                            {% else %}
-                                <div class="closed-box">
-                                    Время записи на эту тренировку уже закончилось.
-                                </div>
-                            {% endif %}
+                                                {% if registration_status == "open" %}
+                                                    <span class="badge badge-green">Запись открыта</span>
+                                                {% elif registration_status == "not_started" %}
+                                                    <span class="badge badge-orange">Запись ещё не началась</span>
+                                                {% else %}
+                                                    <span class="badge badge-red">Запись закрыта</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
 
-                            <div class="lists">
-                                <div class="list-card">
-                                    <div class="card-header">
-                                        <h3>Основной состав</h3>
-                                        <span class="badge badge-green">{{ players|length }}</span>
-                                    </div>
+                                        {% if not current_user_registration and registration_status == "open" %}
+                                            <form method="POST" action="{{ url_for('register_training', training_id=training['id']) }}" class="register-form">
+                                                <button type="submit" class="register-btn">Записаться</button>
+                                            </form>
+                                        {% elif current_user_registration %}
+                                            <div class="closed-box">
+                                                Вы уже записаны на эту тренировку.
+                                            </div>
+                                        {% elif registration_status == "not_started" %}
+                                            <div class="closed-box">
+                                                Запись ещё не началась.
+                                            </div>
+                                        {% else %}
+                                            <div class="closed-box">
+                                                Время записи на эту тренировку уже закончилось.
+                                            </div>
+                                        {% endif %}
 
-                                    {% if players %}
-                                        <ul class="player-list">
-                                            {% for p in players %}
-                                                <li class="player-item">
-                                                    <div class="player-info">
-                                                        <span class="player-name">{{ p["display_name"] }}</span>
-                                                        <span class="player-status active-status">
-                                                            {% if p["is_plus_one"] == 1 %}
-                                                                Добавлен по +1
-                                                            {% else %}
-                                                                Подтверждён
-                                                            {% endif %}
-                                                        </span>
-                                                    </div>
+                                        <div class="lists">
+                                            <div class="list-card">
+                                                <div class="card-header">
+                                                    <h3>Основной состав</h3>
+                                                    <span class="badge badge-green">{{ players|length }}</span>
+                                                </div>
 
-                                                    <div class="player-actions">
-                                                        {% if p["user_id"] == user["id"] and p["is_plus_one"] == 0 and plus_one_available %}
-                                                            <form method="POST" action="{{ url_for('add_plus_one', training_id=training['id']) }}">
-                                                                <button type="submit" class="plus-one-btn">+1</button>
-                                                            </form>
-                                                        {% endif %}
+                                                {% if players %}
+                                                    <ul class="player-list">
+                                                        {% for p in players %}
+                                                            <li class="player-item">
+                                                                <div class="player-info">
+                                                                    <span class="player-name">{{ p["display_name"] }}</span>
+                                                                    <span class="player-status active-status">
+                                                                        {% if p["is_plus_one"] == 1 %}
+                                                                            Добавлен по +1
+                                                                        {% else %}
+                                                                            Подтверждён
+                                                                        {% endif %}
+                                                                    </span>
+                                                                </div>
 
-                                                        {% if p["user_id"] == user["id"] %}
-                                                            <form method="POST" action="{{ url_for('cancel', registration_id=p['id']) }}">
-                                                                <button type="submit" class="cancel-btn">Отменить</button>
-                                                            </form>
-                                                        {% endif %}
-                                                    </div>
-                                                </li>
-                                            {% endfor %}
-                                        </ul>
-                                    {% else %}
-                                        <p class="empty-text">Пока никто не записался.</p>
-                                    {% endif %}
-                                </div>
+                                                                <div class="player-actions">
+                                                                    {% if p["user_id"] == user["id"] and p["is_plus_one"] == 0 and plus_one_available %}
+                                                                        <form method="POST" action="{{ url_for('add_plus_one', training_id=training['id']) }}">
+                                                                            <button type="submit" class="plus-one-btn">+1</button>
+                                                                        </form>
+                                                                    {% endif %}
 
-                                <div class="list-card">
-                                    <div class="card-header">
-                                        <h3>Живая очередь</h3>
-                                        <span class="badge badge-orange">{{ waitlist|length }}</span>
-                                    </div>
+                                                                    {% if p["user_id"] == user["id"] %}
+                                                                        <form method="POST" action="{{ url_for('cancel', registration_id=p['id']) }}">
+                                                                            <button type="submit" class="cancel-btn">Отменить</button>
+                                                                        </form>
+                                                                    {% endif %}
+                                                                </div>
+                                                            </li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                {% else %}
+                                                    <p class="empty-text">Пока никто не записался.</p>
+                                                {% endif %}
+                                            </div>
 
-                                    {% if waitlist %}
-                                        <ul class="player-list">
-                                            {% for p in waitlist %}
-                                                <li class="player-item">
-                                                    <div class="player-info">
-                                                        <span class="player-name">{{ loop.index }}. {{ p["display_name"] }}</span>
-                                                        <span class="player-status wait-status">Ожидает место</span>
-                                                    </div>
+                                            <div class="list-card">
+                                                <div class="card-header">
+                                                    <h3>Живая очередь</h3>
+                                                    <span class="badge badge-orange">{{ waitlist|length }}</span>
+                                                </div>
 
-                                                    {% if p["user_id"] == user["id"] %}
-                                                        <form method="POST" action="{{ url_for('cancel', registration_id=p['id']) }}">
-                                                            <button type="submit" class="cancel-btn">Отменить</button>
-                                                        </form>
-                                                    {% endif %}
-                                                </li>
-                                            {% endfor %}
-                                        </ul>
-                                    {% else %}
-                                        <p class="empty-text">Очередь пуста.</p>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </section>
-                    {% endfor %}
-                </section>
+                                                {% if waitlist %}
+                                                    <ul class="player-list">
+                                                        {% for p in waitlist %}
+                                                            <li class="player-item">
+                                                                <div class="player-info">
+                                                                    <span class="player-name">{{ loop.index }}. {{ p["display_name"] }}</span>
+                                                                    <span class="player-status wait-status">Ожидает место</span>
+                                                                </div>
+
+                                                                {% if p["user_id"] == user["id"] %}
+                                                                    <form method="POST" action="{{ url_for('cancel', registration_id=p['id']) }}">
+                                                                        <button type="submit" class="cancel-btn">Отменить</button>
+                                                                    </form>
+                                                                {% endif %}
+                                                            </li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                {% else %}
+                                                    <p class="empty-text">Очередь пуста.</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </section>
+                                </section>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
             {% else %}
                 <div class="empty-training-box">
                     Пока нет созданных тренировок.
@@ -392,8 +406,12 @@
     const deckDots = Array.from(document.querySelectorAll(".deck-dot"));
     const deckPrevBtn = document.getElementById("deckPrevBtn");
     const deckNextBtn = document.getElementById("deckNextBtn");
-    const detailPanes = Array.from(document.querySelectorAll(".deck-details-pane"));
-    const openButtons = Array.from(document.querySelectorAll("[data-toggle-details]"));
+
+    const trainingModal = document.getElementById("trainingModal");
+    const trainingModalBackdrop = document.getElementById("trainingModalBackdrop");
+    const trainingModalClose = document.getElementById("trainingModalClose");
+    const modalPanes = Array.from(document.querySelectorAll(".training-modal-pane"));
+    const openTrainingButtons = Array.from(document.querySelectorAll("[data-open-training]"));
 
     let activeDeckIndex = 0;
     let touchStartX = 0;
@@ -411,23 +429,24 @@
 
             if (relativeIndex === 0) {
                 card.dataset.stack = "0";
+                card.classList.add("is-active");
             } else if (relativeIndex === 1) {
                 card.dataset.stack = "1";
+                card.classList.remove("is-active");
             } else if (relativeIndex === 2) {
                 card.dataset.stack = "2";
+                card.classList.remove("is-active");
             } else if (relativeIndex === 3) {
                 card.dataset.stack = "3";
+                card.classList.remove("is-active");
             } else {
                 card.dataset.stack = "hidden";
+                card.classList.remove("is-active");
             }
         });
 
         deckDots.forEach((dot, index) => {
             dot.classList.toggle("is-active", index === activeDeckIndex);
-        });
-
-        detailPanes.forEach((pane, index) => {
-            pane.classList.toggle("is-active", index === activeDeckIndex);
         });
     }
 
@@ -437,12 +456,33 @@
         updateDeck();
     }
 
+    function openTrainingModal(index) {
+        if (!trainingModal) return;
+
+        modalPanes.forEach((pane, paneIndex) => {
+            pane.classList.toggle("is-active", paneIndex === index);
+        });
+
+        trainingModal.classList.add("is-open");
+        document.body.classList.add("modal-open");
+    }
+
+    function closeTrainingModal() {
+        if (!trainingModal) return;
+        trainingModal.classList.remove("is-open");
+        document.body.classList.remove("modal-open");
+    }
+
     if (deckPrevBtn) {
-        deckPrevBtn.addEventListener("click", () => goToDeck(activeDeckIndex - 1));
+        deckPrevBtn.addEventListener("click", () => {
+            goToDeck(activeDeckIndex - 1);
+        });
     }
 
     if (deckNextBtn) {
-        deckNextBtn.addEventListener("click", () => goToDeck(activeDeckIndex + 1));
+        deckNextBtn.addEventListener("click", () => {
+            goToDeck(activeDeckIndex + 1);
+        });
     }
 
     deckDots.forEach((dot) => {
@@ -451,20 +491,36 @@
         });
     });
 
-    openButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-            goToDeck(Number(button.dataset.toggleDetails));
-            const target = document.querySelector(`[data-details-pane="${button.dataset.toggleDetails}"]`);
-            if (target) {
-                target.scrollIntoView({ behavior: "smooth", block: "start" });
+    deckCards.forEach((card) => {
+        card.addEventListener("click", () => {
+            const index = Number(card.dataset.index);
+            if (index === activeDeckIndex) {
+                openTrainingModal(index);
+            } else {
+                goToDeck(index);
             }
         });
     });
 
-    deckCards.forEach((card) => {
-        card.addEventListener("click", () => {
-            goToDeck(Number(card.dataset.index));
+    openTrainingButtons.forEach((button) => {
+        button.addEventListener("click", (event) => {
+            event.stopPropagation();
+            openTrainingModal(Number(button.dataset.openTraining));
         });
+    });
+
+    if (trainingModalBackdrop) {
+        trainingModalBackdrop.addEventListener("click", closeTrainingModal);
+    }
+
+    if (trainingModalClose) {
+        trainingModalClose.addEventListener("click", closeTrainingModal);
+    }
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            closeTrainingModal();
+        }
     });
 
     if (deck) {
