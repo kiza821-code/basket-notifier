@@ -10,35 +10,16 @@
 
 <div class="page">
     <div class="container">
-
         <section class="message-card">
-
-            <div class="message-icon">
-                {% if type == "success" %}
-                    ✅
-                {% elif type == "error" %}
-                    ❌
-                {% elif type == "warning" %}
-                    ⚠️
-                {% else %}
-                    🏀
-                {% endif %}
-            </div>
-
+            <div class="message-icon">🏀</div>
             <h1>{{ title }}</h1>
             <p class="message-text">{{ message }}</p>
 
             <div class="message-actions">
-                <a href="{{ url_for('index') }}" class="action-btn blue-btn">
-                    На главную
-                </a>
-                <button type="button" class="action-btn dark-btn" onclick="history.back()">
-                    Назад
-                </button>
+                <a href="{{ url_for('index') }}" class="action-btn blue-btn">На главную</a>
+                <button type="button" class="action-btn dark-btn" onclick="history.back()">Назад</button>
             </div>
-
         </section>
-
     </div>
 </div>
 

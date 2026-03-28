@@ -10,12 +10,9 @@
 
 <div class="page">
     <div class="container">
-
         <section class="login-card">
             <h1>📝 Регистрация</h1>
-            <p class="login-text">
-                Заполните данные. После регистрации доступ должен одобрить администратор.
-            </p>
+            <p class="login-text">После регистрации доступ должен одобрить администратор</p>
 
             <form method="POST" action="{{ url_for('register_account') }}" class="login-form">
                 <input type="text" name="display_name" placeholder="Ваше имя" required>
@@ -24,14 +21,8 @@
                 <button type="submit">Отправить заявку</button>
             </form>
 
-            <div class="login-footer">
-                <span class="login-footer-text">Уже есть аккаунт?</span>
-                <a href="{{ url_for('login') }}" class="action-btn dark-btn">
-                    Войти
-                </a>
-            </div>
+            <a class="admin-link" href="{{ url_for('login') }}">Уже есть аккаунт</a>
         </section>
-
     </div>
 </div>
 
