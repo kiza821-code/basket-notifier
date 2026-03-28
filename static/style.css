@@ -706,3 +706,28 @@ input[type="datetime-local"] {
     background: radial-gradient(circle, rgba(255,140,50,0.25), transparent 70%);
     filter: blur(20px);
 }
+
+.hero-ball {
+    position: absolute !important;
+    right: 20px !important;
+    bottom: 0 !important;
+
+    width: 120px !important;
+    height: 120px !important;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero-ball img {
+    max-width: 100% !important;
+    max-height: 100% !important;
+
+    width: 120px !important;
+    height: 120px !important;
+
+    object-fit: contain;
+
+    filter: drop-shadow(0 0 30px rgba(255,140,50,0.6));
+}
