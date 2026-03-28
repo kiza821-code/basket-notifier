@@ -601,3 +601,302 @@ input[type="datetime-local"] {
         padding: 4px 0 8px;
     }
 }
+
+.deck-section {
+    margin-top: 24px;
+}
+
+.deck-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.deck-title {
+    font-size: 28px;
+    font-weight: bold;
+    color: white;
+}
+
+.deck-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.deck-nav-btn {
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+    color: #0f172a;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.18);
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.deck-nav-btn:hover {
+    transform: translateY(-1px);
+    background: white;
+}
+
+.training-deck-wrap {
+    position: relative;
+    height: 420px;
+}
+
+.training-deck {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.deck-card {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    transition:
+        transform 0.35s ease,
+        opacity 0.35s ease,
+        filter 0.35s ease;
+    cursor: pointer;
+    pointer-events: none;
+}
+
+.deck-card-inner {
+    width: 100%;
+    max-width: 760px;
+    min-height: 100%;
+    background: rgba(255, 255, 255, 0.96);
+    border-radius: 28px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+    padding: 26px 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.deck-card.is-active {
+    pointer-events: auto;
+}
+
+.deck-card[data-stack="0"] {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    z-index: 5;
+}
+
+.deck-card[data-stack="1"] {
+    transform: translateY(24px) scale(0.96);
+    opacity: 0.88;
+    z-index: 4;
+}
+
+.deck-card[data-stack="2"] {
+    transform: translateY(48px) scale(0.92);
+    opacity: 0.72;
+    z-index: 3;
+}
+
+.deck-card[data-stack="3"] {
+    transform: translateY(72px) scale(0.88);
+    opacity: 0.55;
+    z-index: 2;
+}
+
+.deck-card[data-stack="hidden"] {
+    transform: translateY(96px) scale(0.84);
+    opacity: 0;
+    z-index: 1;
+}
+
+.deck-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px;
+}
+
+.deck-card-title {
+    font-size: 32px;
+    line-height: 1.1;
+    font-weight: bold;
+    color: #0f172a;
+    margin-bottom: 10px;
+}
+
+.deck-card-date {
+    color: #475569;
+    font-size: 17px;
+    line-height: 1.5;
+}
+
+.deck-mini-badges {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+.deck-card-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+}
+
+.deck-card-meta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    color: #475569;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+.open-training-btn {
+    border: none;
+    background: #2563eb;
+    color: white;
+    padding: 14px 22px;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.open-training-btn:hover {
+    background: #1d4ed8;
+}
+
+.deck-dots {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.deck-dot {
+    width: 10px;
+    height: 10px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.35);
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.deck-dot.is-active {
+    background: white;
+    transform: scale(1.25);
+}
+
+.training-modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    z-index: 1000;
+}
+
+.training-modal.is-open {
+    display: block;
+}
+
+.training-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.68);
+    backdrop-filter: blur(4px);
+}
+
+.training-modal-dialog {
+    position: relative;
+    z-index: 2;
+    max-width: 1100px;
+    margin: 30px auto;
+    padding: 0 16px;
+    max-height: calc(100vh - 60px);
+    overflow-y: auto;
+}
+
+.training-modal-close {
+    position: sticky;
+    top: 14px;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    color: #0f172a;
+    font-size: 28px;
+    cursor: pointer;
+    z-index: 3;
+}
+
+.training-modal-content {
+    margin-top: 12px;
+}
+
+.training-modal-pane {
+    display: none;
+}
+
+.training-modal-pane.is-active {
+    display: block;
+}
+
+.training-card-modal {
+    margin-bottom: 24px;
+}
+
+body.modal-open {
+    overflow: hidden;
+}
+
+@media (max-width: 900px) {
+    .training-deck-wrap {
+        height: 430px;
+    }
+}
+
+@media (max-width: 700px) {
+    .deck-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .deck-title {
+        font-size: 24px;
+    }
+
+    .deck-card-title {
+        font-size: 26px;
+    }
+
+    .deck-card-top {
+        flex-direction: column;
+    }
+
+    .deck-mini-badges {
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .training-deck-wrap {
+        height: 470px;
+    }
+}
