@@ -29,13 +29,6 @@
         <header class="hero">
             <h1>🏀 Запись на тренировки</h1>
 
-            <div class="admin-header-links">
-                {% if user and user["is_admin"] == 1 %}
-                    <a class="admin-link" href="{{ url_for('admin_panel') }}">Админка</a>
-                {% endif %}
-                <a class="admin-link" href="{{ url_for('logout') }}">Выйти</a>
-            </div>
-
             {% if user and user["status"] == "approved" %}
                 <div class="hero-actions">
                     <button id="enablePushBtn" class="install-btn" type="button">
@@ -195,6 +188,12 @@
                 </div>
             {% endif %}
         {% endif %}
+        <div class="admin-header-links">
+                {% if user and user["is_admin"] == 1 %}
+                    <a class="admin-link" href="{{ url_for('admin_panel') }}">Админка</a>
+                {% endif %}
+                <a class="admin-link" href="{{ url_for('logout') }}">Выйти</a>
+        </div>
     </div>
 </div>
 

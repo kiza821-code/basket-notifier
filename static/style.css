@@ -488,3 +488,8 @@ input[type="datetime-local"] {
         text-align: center;
     }
 }
+
+.bottom-links {
+    margin-top: 24px;
+    justify-content: center;
+}
