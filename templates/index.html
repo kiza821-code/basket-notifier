@@ -276,6 +276,11 @@
                     </div>
                 </div>
             {% else %}
+                <div class="empty-training-box">
+                    Пока нет созданных тренировок.
+                </div>
+            {% endif %}
+        {% endif %}
     </div>
 </div>
 
@@ -392,68 +397,6 @@
 
     if (pushBtn) {
         pushBtn.addEventListener("click", enablePushNotifications);
-    }
-</script>
-
-<script>
-    const trainingSlider = document.getElementById("trainingSlider");
-    const prevTrainingBtn = document.getElementById("prevTrainingBtn");
-    const nextTrainingBtn = document.getElementById("nextTrainingBtn");
-    const sliderDots = document.querySelectorAll(".slider-dot");
-
-    if (trainingSlider) {
-        const slides = trainingSlider.querySelectorAll(".training-slide");
-
-        function getCurrentSlideIndex() {
-            const slideWidth = trainingSlider.clientWidth;
-            if (!slideWidth) return 0;
-            return Math.round(trainingSlider.scrollLeft / slideWidth);
-        }
-
-        function scrollToSlide(index) {
-            const slideWidth = trainingSlider.clientWidth;
-            trainingSlider.scrollTo({
-                left: index * slideWidth,
-                behavior: "smooth"
-            });
-        }
-
-        function updateDots() {
-            const currentIndex = getCurrentSlideIndex();
-            sliderDots.forEach((dot, index) => {
-                dot.classList.toggle("is-active", index === currentIndex);
-            });
-        }
-
-        if (prevTrainingBtn) {
-            prevTrainingBtn.addEventListener("click", () => {
-                const currentIndex = getCurrentSlideIndex();
-                const nextIndex = Math.max(0, currentIndex - 1);
-                scrollToSlide(nextIndex);
-            });
-        }
-
-        if (nextTrainingBtn) {
-            nextTrainingBtn.addEventListener("click", () => {
-                const currentIndex = getCurrentSlideIndex();
-                const nextIndex = Math.min(slides.length - 1, currentIndex + 1);
-                scrollToSlide(nextIndex);
-            });
-        }
-
-        sliderDots.forEach((dot) => {
-            dot.addEventListener("click", () => {
-                const index = Number(dot.dataset.slide);
-                scrollToSlide(index);
-            });
-        });
-
-        trainingSlider.addEventListener("scroll", () => {
-            window.requestAnimationFrame(updateDots);
-        });
-
-        window.addEventListener("resize", updateDots);
-        updateDots();
     }
 </script>
 
