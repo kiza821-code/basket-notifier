@@ -7,7 +7,7 @@
 
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" content="#d9d1c7">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
 
     <script type="module">
@@ -25,31 +25,55 @@
 <body>
 
 <div class="page">
-    <div class="container">
-        <header class="hero">
-            <h1>🏀 Запись на тренировки</h1>
+    <div class="container mobile-shell">
 
-            <div class="admin-header-links">
-                {% if user and user["is_admin"] == 1 %}
-                    <a class="admin-link" href="{{ url_for('admin_panel') }}">Админка</a>
-                {% endif %}
-                <a class="admin-link" href="{{ url_for('logout') }}">Выйти</a>
+        <header class="hero hero-premium">
+            <div class="hero-topline">BASKETBALL</div>
+
+            <div class="hero-grid">
+                <div class="hero-content">
+                    <h1>
+                        JOIN THE<br>
+                        STREET<br>
+                        GAME
+                    </h1>
+
+                    <p class="hero-subtitle">
+                        Записывайтесь на ближайшие тренировки, следите за составом и живой очередью в одном месте.
+                    </p>
+
+                    <div class="hero-actions">
+                        {% if user and user["status"] == "approved" %}
+                            <button id="enablePushBtn" class="primary-btn" type="button">
+                                Уведомления
+                            </button>
+                            <button id="installBtn" class="secondary-btn" type="button" style="display:none;">
+                                Установить
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="hero-ball-wrap">
+                    <div class="hero-ball"></div>
+                </div>
             </div>
 
-            {% if user and user["status"] == "approved" %}
-                <div class="hero-actions">
-                    <button id="enablePushBtn" class="install-btn" type="button">
-                        Разрешить уведомления
-                    </button>
-                    <button id="installBtn" class="install-btn" type="button" style="display:none;">
-                        Установить приложение
-                    </button>
+            <div class="hero-footer">
+                <div class="hero-user-line">
+                    <span class="hero-user-badge">{{ user["display_name"] }}</span>
+
+                    {% if user and user["is_admin"] == 1 %}
+                        <a class="mini-link" href="{{ url_for('admin_panel') }}">Админка</a>
+                    {% endif %}
+
+                    <a class="mini-link" href="{{ url_for('logout') }}">Выйти</a>
                 </div>
-            {% endif %}
+            </div>
         </header>
 
         {% if user["status"] == "pending" %}
-            <section class="message-card">
+            <section class="message-card premium-card">
                 <div class="message-icon">⏳</div>
                 <h1>Заявка на рассмотрении</h1>
                 <p class="message-text">
@@ -58,7 +82,7 @@
             </section>
 
         {% elif user["status"] == "blocked" %}
-            <section class="message-card">
+            <section class="message-card premium-card">
                 <div class="message-icon">⛔</div>
                 <h1>Доступ ограничен</h1>
                 <p class="message-text">
@@ -68,6 +92,11 @@
 
         {% else %}
             {% if trainings_data %}
+                <section class="section-intro">
+                    <div class="section-kicker">SCHEDULE</div>
+                    <h2>Ближайшие тренировки</h2>
+                </section>
+
                 {% for item in trainings_data %}
                     {% set training = item.training %}
                     {% set players = item.players %}
@@ -76,60 +105,80 @@
                     {% set plus_one_available = item.plus_one_available %}
                     {% set current_user_registration = item.current_user_registration %}
 
-                    <section class="training-card">
-                        <div class="training-top">
-                            <div>
+                    <section class="training-card training-card-premium">
+                        <div class="training-card-head">
+                            <div class="training-card-title-block">
+                                <div class="training-day-label">TRAINING</div>
                                 <h2>{{ training["title"] }}</h2>
                                 <p class="training-meta">
-                                    📅 Тренировка: {{ training["training_date"] }} &nbsp;&nbsp; 🕒 {{ training["training_time"] }}
+                                    <span>{{ training["training_date"] }}</span>
+                                    <span>•</span>
+                                    <span>{{ training["training_time"] }}</span>
                                 </p>
                             </div>
 
                             <div class="training-badges">
-                                <span class="badge badge-blue">Мест: {{ players|length }}/{{ training["max_players"] }}</span>
+                                <span class="badge badge-dark">Мест {{ players|length }}/{{ training["max_players"] }}</span>
 
                                 {% if registration_status == "open" %}
-                                    <span class="badge badge-green">Запись открыта</span>
+                                    <span class="badge badge-soft-success">Запись открыта</span>
                                 {% elif registration_status == "not_started" %}
-                                    <span class="badge badge-orange">Запись ещё не началась</span>
+                                    <span class="badge badge-soft-warn">Скоро откроется</span>
                                 {% else %}
-                                    <span class="badge badge-red">Запись закрыта</span>
+                                    <span class="badge badge-soft-danger">Запись закрыта</span>
                                 {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="training-visual-block">
+                            <div class="training-visual-image">
+                                <div class="training-ball-small"></div>
+                            </div>
+
+                            <div class="training-visual-panel">
+                                <div class="training-visual-stat">
+                                    <span class="stat-label">Основной состав</span>
+                                    <span class="stat-value">{{ players|length }}</span>
+                                </div>
+                                <div class="training-visual-stat">
+                                    <span class="stat-label">Очередь</span>
+                                    <span class="stat-value">{{ waitlist|length }}</span>
+                                </div>
                             </div>
                         </div>
 
                         {% if not current_user_registration and registration_status == "open" %}
                             <form method="POST" action="{{ url_for('register_training', training_id=training['id']) }}" class="register-form">
-                                <button type="submit" class="register-btn">Записаться</button>
+                                <button type="submit" class="register-btn premium-main-btn">Записаться</button>
                             </form>
                         {% elif current_user_registration %}
-                            <div class="closed-box">
+                            <div class="closed-box premium-info-box">
                                 Вы уже записаны на эту тренировку.
                             </div>
                         {% elif registration_status == "not_started" %}
-                            <div class="closed-box">
+                            <div class="closed-box premium-info-box">
                                 Запись ещё не началась.
                             </div>
                         {% else %}
-                            <div class="closed-box">
+                            <div class="closed-box premium-info-box">
                                 Время записи на эту тренировку уже закончилось.
                             </div>
                         {% endif %}
 
-                        <div class="lists">
-                            <div class="list-card">
+                        <div class="lists premium-lists">
+                            <div class="list-card list-card-dark">
                                 <div class="card-header">
                                     <h3>Основной состав</h3>
-                                    <span class="badge badge-green">{{ players|length }}</span>
+                                    <span class="badge badge-light">{{ players|length }}</span>
                                 </div>
 
                                 {% if players %}
                                     <ul class="player-list">
                                         {% for p in players %}
-                                            <li class="player-item">
+                                            <li class="player-item dark-item">
                                                 <div class="player-info">
-                                                    <span class="player-name">{{ p["display_name"] }}</span>
-                                                    <span class="player-status active-status">
+                                                    <span class="player-name light-name">{{ p["display_name"] }}</span>
+                                                    <span class="player-status light-status">
                                                         {% if p["is_plus_one"] == 1 %}
                                                             Добавлен по +1
                                                         {% else %}
@@ -155,14 +204,14 @@
                                         {% endfor %}
                                     </ul>
                                 {% else %}
-                                    <p class="empty-text">Пока никто не записался.</p>
+                                    <p class="empty-text light-empty">Пока никто не записался.</p>
                                 {% endif %}
                             </div>
 
-                            <div class="list-card">
+                            <div class="list-card list-card-light">
                                 <div class="card-header">
                                     <h3>Живая очередь</h3>
-                                    <span class="badge badge-orange">{{ waitlist|length }}</span>
+                                    <span class="badge badge-cream">{{ waitlist|length }}</span>
                                 </div>
 
                                 {% if waitlist %}
@@ -190,7 +239,7 @@
                     </section>
                 {% endfor %}
             {% else %}
-                <div class="empty-training-box">
+                <div class="empty-training-box premium-info-box">
                     Пока нет созданных тренировок.
                 </div>
             {% endif %}
@@ -218,7 +267,7 @@
         event.preventDefault();
         deferredPrompt = event;
         if (installBtn) {
-            installBtn.style.display = "inline-block";
+            installBtn.style.display = "inline-flex";
         }
     });
 
@@ -244,7 +293,7 @@
             pushBtn.style.display = "none";
             console.log("Пользователь запретил уведомления");
         } else {
-            pushBtn.style.display = "inline-block";
+            pushBtn.style.display = "inline-flex";
         }
     }
 
