@@ -885,3 +885,23 @@ input[type="datetime-local"] {
     color: rgba(255,255,255,0.6);
     margin-bottom: 6px;
 }
+
+.training-main-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.training-date-big {
+    font-size: 26px;
+    font-weight: 900;
+    letter-spacing: 1.2px;
+    color: #ffffff;
+}
+
+.training-title-inline {
+    font-size: 18px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.85);
+}

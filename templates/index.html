@@ -106,7 +106,30 @@
                                         {{ item.weekday }}
                                     </div>
 
-                                    <h2>{{ training["title"] }}</h2>
+                                    <div class="training-main-line">
+                                        <div class="training-date-big">
+                                            {{ training["training_date"][8:10] }}
+                                            {% set month_num = training["training_date"][5:7] %}
+                                            {% if month_num == "01" %}ЯНВАРЯ
+                                            {% elif month_num == "02" %}ФЕВРАЛЯ
+                                            {% elif month_num == "03" %}МАРТА
+                                            {% elif month_num == "04" %}АПРЕЛЯ
+                                            {% elif month_num == "05" %}МАЯ
+                                            {% elif month_num == "06" %}ИЮНЯ
+                                            {% elif month_num == "07" %}ИЮЛЯ
+                                            {% elif month_num == "08" %}АВГУСТА
+                                            {% elif month_num == "09" %}СЕНТЯБРЯ
+                                            {% elif month_num == "10" %}ОКТЯБРЯ
+                                            {% elif month_num == "11" %}НОЯБРЯ
+                                            {% elif month_num == "12" %}ДЕКАБРЯ
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="training-title-inline">
+                                            — {{ training["title"] }}
+                                        </div>
+                                    </div>
+
                                 </div>
                             </div>
 
