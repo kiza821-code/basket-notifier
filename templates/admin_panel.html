@@ -10,36 +10,25 @@
 
 <div class="page">
     <div class="container">
+        <section class="training-card">
+            <h1 style="margin-bottom: 20px;">⚙️ Админ-панель</h1>
 
-        <header class="hero">
-            <h1>⚙️ Админ-панель</h1>
-            <p>
-                Управление тренировками, пользователями и заявками на доступ.
-            </p>
-
-            <div class="admin-actions">
+            <div class="admin-actions" style="margin-bottom: 20px;">
                 <a href="{{ url_for('index') }}" class="action-btn dark-btn">На главную</a>
                 <a href="{{ url_for('logout') }}" class="action-btn red-btn">Выйти</a>
-            </div>
-        </header>
-
-        <section class="training-card">
-            <div class="card-header">
-                <h3>Создание тренировки</h3>
-                <span class="badge badge-blue">Новая запись</span>
             </div>
 
             <form method="POST" action="{{ url_for('create_training') }}" class="admin-form">
                 <input type="text" name="title" placeholder="Название тренировки" required>
                 <input type="date" name="training_date" required>
                 <input type="time" name="training_time" required>
-                <input type="number" name="max_players" value="15" min="1" placeholder="Количество мест" required>
+                <input type="number" name="max_players" value="15" min="1" required>
                 <input type="datetime-local" name="registration_start" required>
                 <input type="datetime-local" name="registration_end" required>
                 <button type="submit">Создать тренировку</button>
             </form>
 
-            <div class="admin-actions">
+            <div class="admin-actions" style="margin-top: 16px;">
                 <a href="{{ url_for('generate_schedule') }}" class="action-btn blue-btn">Сгенерировать расписание</a>
             </div>
         </section>
@@ -132,11 +121,7 @@
                                 <a href="{{ url_for('admin_training_detail', training_id=t['id']) }}" class="action-btn blue-btn">
                                     Открыть
                                 </a>
-                                <a href="{{ url_for('delete_training', training_id=t['id']) }}"
-                                   class="action-btn red-btn"
-                                   onclick="return confirm('Удалить тренировку {{ t['title'] }}?');">
-                                    Удалить
-                                </a>
+                                <a href="{{ url_for('delete_training', training_id=t['id']) }}" class="action-btn red-btn">Удалить</a>
                             </div>
                         </li>
                     {% endfor %}
@@ -145,7 +130,6 @@
                 <p class="empty-text">Тренировок пока нет.</p>
             {% endif %}
         </section>
-
     </div>
 </div>
 
