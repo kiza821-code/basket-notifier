@@ -81,17 +81,38 @@ self.addEventListener("notificationclick", (event) => {
 
   const targetUrl = event.notification.data?.url || "https://basketapp.ru/";
 
-  event.waitUntil(
-    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if ("focus" in client) {
-          client.navigate(targetUrl);
-          return client.focus();
+  event.waitUntil((async () => {
+    const windowClients = await clients.matchAll({
+      type: "window",
+      includeUncontrolled: true
+    });
+
+    // Сначала ищем уже открытое окно нашего сайта
+    for (const client of windowClients) {
+      try {
+        const clientUrl = new URL(client.url);
+
+        if (clientUrl.origin === self.location.origin) {
+          await client.focus();
+
+          // Если браузер поддерживает navigate — переводим текущее окно
+          if ("navigate" in client) {
+            await client.navigate(targetUrl);
+          } else {
+            // fallback: открываем новое окно
+            await clients.openWindow(targetUrl);
+          }
+
+          return;
         }
+      } catch (e) {
+        console.log("notificationclick client handling error:", e);
       }
-      if (clients.openWindow) {
-        return clients.openWindow(targetUrl);
-      }
-    })
-  );
+    }
+
+    // Если вообще нет открытых окон сайта — открываем новое
+    if (clients.openWindow) {
+      await clients.openWindow(targetUrl);
+    }
+  })());
 });
