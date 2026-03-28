@@ -10,9 +10,12 @@
 
 <div class="page">
     <div class="container">
+
         <section class="login-card">
             <h1>🔐 Вход</h1>
-            <p class="login-text">Введите email и пароль</p>
+            <p class="login-text">
+                Введите email и пароль, чтобы продолжить
+            </p>
 
             {% if error %}
                 <div class="error-box">{{ error }}</div>
@@ -24,8 +27,14 @@
                 <button type="submit">Войти</button>
             </form>
 
-            <a class="admin-link" href="{{ url_for('register_account') }}">Регистрация</a>
+            <div class="login-footer">
+                <span class="login-footer-text">Нет аккаунта?</span>
+                <a href="{{ url_for('register_account') }}" class="action-btn blue-btn">
+                    Регистрация
+                </a>
+            </div>
         </section>
+
     </div>
 </div>
 
