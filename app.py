@@ -693,12 +693,28 @@ def index():
                 WHERE training_id = ? AND user_id = ? AND is_plus_one = 0
             """, (training["id"], user["id"])).fetchone()
 
+        from datetime import datetime
+
+        weekday_map = [
+            "ПОНЕДЕЛЬНИК",
+            "ВТОРНИК",
+            "СРЕДА",
+            "ЧЕТВЕРГ",
+            "ПЯТНИЦА",
+            "СУББОТА",
+            "ВОСКРЕСЕНЬЕ"
+        ]
+
+        date_obj = datetime.strptime(training["training_date"], "%Y-%m-%d")
+        weekday_name = weekday_map[date_obj.weekday()]
+
         trainings_data.append({
             "training": training,
             "players": active_players,
             "waitlist": waitlist,
             "registration_status": get_registration_status(training),
             "plus_one_available": can_plus_one_be_added(training, len(active_players)),
+            "weekday": weekday_name,
             "current_user_registration": current_user_registration
         })
 

@@ -101,14 +101,12 @@
                                 </div>
 
                                 <div class="training-title-wrap">
+
+                                    <div class="training-weekday">
+                                        {{ data["weekday"] }}
+                                    </div>
+
                                     <h2>{{ training["title"] }}</h2>
-                                    <p class="training-meta">
-                                        <span class="training-date-text">
-                                            {% set date_obj = training["training_date"] %}
-                                            {% set weekday_num = training["training_date"] %}
-                                            {{ training["training_date"] }}
-                                        </span>
-                                    </p>
                                 </div>
                             </div>
 
