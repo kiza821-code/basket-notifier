@@ -494,8 +494,14 @@ input[type="datetime-local"] {
     justify-content: center;
 }
 
+.bottom-links {
+    margin-top: 24px;
+    justify-content: center;
+}
+
 .dropdown-header {
     cursor: pointer;
+    user-select: none;
 }
 
 .dropdown-meta {
@@ -505,13 +511,22 @@ input[type="datetime-local"] {
 }
 
 .dropdown-arrow {
-    font-size: 16px;
+    font-size: 18px;
+    line-height: 1;
     transition: transform 0.3s ease;
 }
 
 .dropdown-content {
     max-height: 0;
+    opacity: 0;
     overflow: hidden;
-    transition: max-height 0.3s ease;
+    transition: max-height 0.35s ease, opacity 0.25s ease;
 }
 
+.dropdown-content-inner {
+    padding-top: 14px;
+}
+
+.dropdown-content.open {
+    opacity: 1;
+}
