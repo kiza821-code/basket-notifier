@@ -26,19 +26,26 @@
 
 <div class="page">
     <div class="container">
-        <header class="hero">
-            <h1>🏀 Запись на тренировки</h1>
+        <header class="hero hero-new">
+            <div class="hero-text">
+                <h1>Запись на<br>тренировки</h1>
+                <p class="hero-subtitle">Ближайшие сессии</p>
 
-            {% if user and user["status"] == "approved" %}
-                <div class="hero-actions">
-                    <button id="enablePushBtn" class="install-btn" type="button">
-                        Разрешить уведомления
-                    </button>
-                    <button id="installBtn" class="install-btn" type="button" style="display:none;">
-                        Установить приложение
-                    </button>
-                </div>
-            {% endif %}
+                {% if user and user["status"] == "approved" %}
+                    <div class="hero-actions">
+                        <button id="enablePushBtn" class="install-btn" type="button">
+                            Разрешить уведомления
+                        </button>
+                        <button id="installBtn" class="install-btn" type="button" style="display:none;">
+                            Установить приложение
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="hero-ball">
+                <img src="{{ url_for('static', filename='ball.png') }}" alt="ball">
+            </div>
         </header>
 
         {% if user["status"] == "pending" %}
