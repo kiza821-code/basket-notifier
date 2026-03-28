@@ -103,19 +103,32 @@ body {
 
 .training-top h2 {
     color: var(--text-main);
-    margin-bottom: 8px;
-    font-size: 26px;
+    margin-bottom: 6px;
+    font-size: 28px;        /* было меньше */
     line-height: 1.1;
     font-weight: 800;
+    letter-spacing: -0.5px;
 }
 
 .training-meta {
     color: var(--text-secondary);
-    font-size: 15px;
-    line-height: 1.5;
+    font-size: 18px;   /* было ~15 */
+    font-weight: 600;
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
+    align-items: center;
+    gap: 12px;
+}
+
+.training-meta {
+    background: rgba(255,255,255,0.06);
+    padding: 6px 12px;
+    border-radius: 999px;
+}
+
+.training-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .training-badges {
