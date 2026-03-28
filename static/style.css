@@ -677,24 +677,6 @@ input[type="datetime-local"] {
     letter-spacing: 1px;
 }
 
-/* мяч */
-.hero-ball {
-    position: absolute;
-    right: 20px;
-    bottom: -20px;
-
-    width: 140px;
-    height: 140px;
-}
-
-.hero-ball img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-
-    filter: drop-shadow(0 0 30px rgba(255,140,50,0.6));
-}
-
 /* glow эффект под мячом */
 .hero-new::after {
     content: "";
@@ -707,27 +689,29 @@ input[type="datetime-local"] {
     filter: blur(20px);
 }
 
+.hero {
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-new {
+    min-height: 220px;
+}
+
 .hero-ball {
     position: absolute !important;
-    right: 20px !important;
-    bottom: 0 !important;
-
-    width: 120px !important;
-    height: 120px !important;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    right: 24px !important;
+    top: 24px !important;
+    width: 110px !important;
+    height: 110px !important;
+    display: block !important;
 }
 
 .hero-ball img {
-    max-width: 100% !important;
-    max-height: 100% !important;
-
-    width: 120px !important;
-    height: 120px !important;
-
-    object-fit: contain;
-
-    filter: drop-shadow(0 0 30px rgba(255,140,50,0.6));
+    display: block !important;
+    width: 110px !important;
+    height: 110px !important;
+    max-width: 110px !important;
+    max-height: 110px !important;
+    object-fit: contain !important;
 }
