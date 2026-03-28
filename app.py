@@ -693,8 +693,7 @@ def index():
                 WHERE training_id = ? AND user_id = ? AND is_plus_one = 0
             """, (training["id"], user["id"])).fetchone()
 
-        from datetime import datetime
-
+        date_obj = datetime.strptime(training["training_date"], "%Y-%m-%d")
         weekday_map = [
             "ПОНЕДЕЛЬНИК",
             "ВТОРНИК",
@@ -704,8 +703,6 @@ def index():
             "СУББОТА",
             "ВОСКРЕСЕНЬЕ"
         ]
-
-        date_obj = datetime.strptime(training["training_date"], "%Y-%m-%d")
         weekday_name = weekday_map[date_obj.weekday()]
 
         trainings_data.append({
