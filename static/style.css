@@ -530,3 +530,45 @@ input[type="datetime-local"] {
 .dropdown-content.open {
     opacity: 1;
 }
+
+.bottom-links {
+    margin-top: 24px;
+    justify-content: center;
+}
+
+.dropdown-card {
+    width: 100%;
+}
+
+.dropdown-card summary {
+    list-style: none;
+}
+
+.dropdown-card summary::-webkit-details-marker {
+    display: none;
+}
+
+.dropdown-summary {
+    cursor: pointer;
+    user-select: none;
+}
+
+.dropdown-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dropdown-arrow {
+    font-size: 16px;
+    line-height: 1;
+    transition: transform 0.25s ease;
+}
+
+.dropdown-card[open] .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.dropdown-content-static {
+    padding-top: 14px;
+}

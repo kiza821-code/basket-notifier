@@ -111,16 +111,16 @@
 
                         <div class="lists">
                             <div class="list-card">
-                                <div class="card-header dropdown-header" onclick="toggleDropdown(this)">
-                                    <h3>Основной состав</h3>
-                                    <div class="dropdown-meta">
-                                        <span class="badge badge-green">{{ players|length }}</span>
-                                        <span class="dropdown-arrow">⌄</span>
-                                    </div>
-                                </div>
+                                <details class="dropdown-card">
+                                    <summary class="card-header dropdown-summary">
+                                        <h3>Основной состав</h3>
+                                        <div class="dropdown-meta">
+                                            <span class="badge badge-green">{{ players|length }}</span>
+                                            <span class="dropdown-arrow">⌄</span>
+                                        </div>
+                                    </summary>
 
-                                <div class="dropdown-content">
-                                    <div class="dropdown-content-inner">
+                                    <div class="dropdown-content-static">
                                         {% if players %}
                                             <ul class="player-list">
                                                 {% for p in players %}
@@ -156,20 +156,20 @@
                                             <p class="empty-text">Пока никто не записался.</p>
                                         {% endif %}
                                     </div>
-                                </div>
+                                </details>
                             </div>
 
                             <div class="list-card">
-                                <div class="card-header dropdown-header" onclick="toggleDropdown(this)">
-                                    <h3>Живая очередь</h3>
-                                    <div class="dropdown-meta">
-                                        <span class="badge badge-orange">{{ waitlist|length }}</span>
-                                        <span class="dropdown-arrow">⌄</span>
-                                    </div>
-                                </div>
+                                <details class="dropdown-card">
+                                    <summary class="card-header dropdown-summary">
+                                        <h3>Живая очередь</h3>
+                                        <div class="dropdown-meta">
+                                            <span class="badge badge-orange">{{ waitlist|length }}</span>
+                                            <span class="dropdown-arrow">⌄</span>
+                                        </div>
+                                    </summary>
 
-                                <div class="dropdown-content">
-                                    <div class="dropdown-content-inner">
+                                    <div class="dropdown-content-static">
                                         {% if waitlist %}
                                             <ul class="player-list">
                                                 {% for p in waitlist %}
@@ -191,7 +191,7 @@
                                             <p class="empty-text">Очередь пуста.</p>
                                         {% endif %}
                                     </div>
-                                </div>
+                                </details>
                             </div>
                         </div>
                     </section>
@@ -328,27 +328,5 @@
     }
 </script>
 
-<script>
-    function toggleDropdown(header) {
-        const content = header.nextElementSibling;
-        const arrow = header.querySelector(".dropdown-arrow");
-
-        if (content.classList.contains("open")) {
-            content.style.maxHeight = "0px";
-            content.classList.remove("open");
-            arrow.style.transform = "rotate(0deg)";
-        } else {
-            content.classList.add("open");
-            content.style.maxHeight = content.scrollHeight + "px";
-            arrow.style.transform = "rotate(180deg)";
-        }
-    }
-
-    window.addEventListener("resize", () => {
-        document.querySelectorAll(".dropdown-content.open").forEach((content) => {
-            content.style.maxHeight = content.scrollHeight + "px";
-        });
-    });
-</script>
 </body>
 </html>
