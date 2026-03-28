@@ -493,3 +493,25 @@ input[type="datetime-local"] {
     margin-top: 24px;
     justify-content: center;
 }
+
+.dropdown-header {
+    cursor: pointer;
+}
+
+.dropdown-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dropdown-arrow {
+    font-size: 16px;
+    transition: transform 0.3s ease;
+}
+
+.dropdown-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+

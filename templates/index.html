@@ -111,73 +111,83 @@
 
                         <div class="lists">
                             <div class="list-card">
-                                <div class="card-header">
+                                <div class="card-header dropdown-header" onclick="toggleDropdown(this)">
                                     <h3>Основной состав</h3>
-                                    <span class="badge badge-green">{{ players|length }}</span>
+                                    <div class="dropdown-meta">
+                                        <span class="badge badge-green">{{ players|length }}</span>
+                                        <span class="dropdown-arrow">⌄</span>
+                                    </div>
                                 </div>
 
-                                {% if players %}
-                                    <ul class="player-list">
-                                        {% for p in players %}
-                                            <li class="player-item">
-                                                <div class="player-info">
-                                                    <span class="player-name">{{ p["display_name"] }}</span>
-                                                    <span class="player-status active-status">
-                                                        {% if p["is_plus_one"] == 1 %}
-                                                            Добавлен по +1
-                                                        {% else %}
-                                                            Подтверждён
-                                                        {% endif %}
-                                                    </span>
-                                                </div>
+                                <div class="dropdown-content">
+                                    {% if players %}
+                                        <ul class="player-list">
+                                            {% for p in players %}
+                                                <li class="player-item">
+                                                    <div class="player-info">
+                                                        <span class="player-name">{{ p["display_name"] }}</span>
+                                                        <span class="player-status active-status">
+                                                            {% if p["is_plus_one"] == 1 %}
+                                                                Добавлен по +1
+                                                            {% else %}
+                                                                Подтверждён
+                                                            {% endif %}
+                                                        </span>
+                                                    </div>
 
-                                                <div class="player-actions">
-                                                    {% if p["user_id"] == user["id"] and p["is_plus_one"] == 0 and plus_one_available %}
-                                                        <form method="POST" action="{{ url_for('add_plus_one', training_id=training['id']) }}">
-                                                            <button type="submit" class="plus-one-btn">+1</button>
-                                                        </form>
-                                                    {% endif %}
+                                                    <div class="player-actions">
+                                                        {% if p["user_id"] == user["id"] and p["is_plus_one"] == 0 and plus_one_available %}
+                                                            <form method="POST" action="{{ url_for('add_plus_one', training_id=training['id']) }}">
+                                                                <button type="submit" class="plus-one-btn">+1</button>
+                                                            </form>
+                                                        {% endif %}
+
+                                                        {% if p["user_id"] == user["id"] %}
+                                                            <form method="POST" action="{{ url_for('cancel', registration_id=p['id']) }}">
+                                                                <button type="submit" class="cancel-btn">Отменить</button>
+                                                            </form>
+                                                        {% endif %}
+                                                    </div>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <p class="empty-text">Пока никто не записался.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="list-card">
+                                <div class="card-header dropdown-header" onclick="toggleDropdown(this)">
+                                    <h3>Живая очередь</h3>
+                                    <div class="dropdown-meta">
+                                        <span class="badge badge-orange">{{ waitlist|length }}</span>
+                                        <span class="dropdown-arrow">⌄</span>
+                                    </div>
+                                </div>
+
+                                <div class="dropdown-content">
+                                    {% if waitlist %}
+                                        <ul class="player-list">
+                                            {% for p in waitlist %}
+                                                <li class="player-item">
+                                                    <div class="player-info">
+                                                        <span class="player-name">{{ loop.index }}. {{ p["display_name"] }}</span>
+                                                        <span class="player-status wait-status">Ожидает место</span>
+                                                    </div>
 
                                                     {% if p["user_id"] == user["id"] %}
                                                         <form method="POST" action="{{ url_for('cancel', registration_id=p['id']) }}">
                                                             <button type="submit" class="cancel-btn">Отменить</button>
                                                         </form>
                                                     {% endif %}
-                                                </div>
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                {% else %}
-                                    <p class="empty-text">Пока никто не записался.</p>
-                                {% endif %}
-                            </div>
-
-                            <div class="list-card">
-                                <div class="card-header">
-                                    <h3>Живая очередь</h3>
-                                    <span class="badge badge-orange">{{ waitlist|length }}</span>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <p class="empty-text">Очередь пуста.</p>
+                                    {% endif %}
                                 </div>
-
-                                {% if waitlist %}
-                                    <ul class="player-list">
-                                        {% for p in waitlist %}
-                                            <li class="player-item">
-                                                <div class="player-info">
-                                                    <span class="player-name">{{ loop.index }}. {{ p["display_name"] }}</span>
-                                                    <span class="player-status wait-status">Ожидает место</span>
-                                                </div>
-
-                                                {% if p["user_id"] == user["id"] %}
-                                                    <form method="POST" action="{{ url_for('cancel', registration_id=p['id']) }}">
-                                                        <button type="submit" class="cancel-btn">Отменить</button>
-                                                    </form>
-                                                {% endif %}
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                {% else %}
-                                    <p class="empty-text">Очередь пуста.</p>
-                                {% endif %}
                             </div>
                         </div>
                     </section>
@@ -188,11 +198,12 @@
                 </div>
             {% endif %}
         {% endif %}
-        <div class="admin-header-links">
-                {% if user and user["is_admin"] == 1 %}
-                    <a class="admin-link" href="{{ url_for('admin_panel') }}">Админка</a>
-                {% endif %}
-                <a class="admin-link" href="{{ url_for('logout') }}">Выйти</a>
+
+        <div class="admin-header-links bottom-links">
+            {% if user and user["is_admin"] == 1 %}
+                <a class="admin-link" href="{{ url_for('admin_panel') }}">Админка</a>
+            {% endif %}
+            <a class="admin-link" href="{{ url_for('logout') }}">Выйти</a>
         </div>
     </div>
 </div>
@@ -310,6 +321,23 @@
 
     if (pushBtn) {
         pushBtn.addEventListener("click", enablePushNotifications);
+    }
+</script>
+
+<script>
+    function toggleDropdown(header) {
+        const content = header.nextElementSibling;
+        const arrow = header.querySelector(".dropdown-arrow");
+
+        content.classList.toggle("open");
+
+        if (content.classList.contains("open")) {
+            content.style.maxHeight = content.scrollHeight + "px";
+            arrow.style.transform = "rotate(180deg)";
+        } else {
+            content.style.maxHeight = "0px";
+            arrow.style.transform = "rotate(0deg)";
+        }
     }
 </script>
 
