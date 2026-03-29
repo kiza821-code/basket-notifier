@@ -141,12 +141,7 @@
                                     {% endif %}
                                 </div>
 
-                                {% if training_started and payment_available %}
-                                    <div class="closed-box closed-box-success">
-                                        <span class="closed-box-success-icon"></span>
-                                        <span>Не забудь оплатить тренировку.</span>
-                                    </div>
-                                {% elif not current_user_registration and registration_status == "open" %}
+                                {% if not current_user_registration and registration_status == "open" %}
                                     <form method="POST" action="{{ url_for('register_training', training_id=training['id']) }}" class="register-form">
                                         <button type="submit" class="register-btn">Записаться</button>
                                     </form>
