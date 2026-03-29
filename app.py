@@ -393,6 +393,57 @@ def get_registration_status(training):
 def get_training_datetime(training):
     return parse_local_datetime(training["training_date"], training["training_time"])
 
+def get_user_active_main_registration(cursor, training_id, user_id):
+    return cursor.execute("""
+        SELECT *
+        FROM registrations
+        WHERE training_id = ?
+          AND user_id = ?
+          AND status = 'active'
+          AND is_plus_one = 0
+        LIMIT 1
+    """, (training_id, user_id)).fetchone()
+
+
+def can_user_pay_for_training(cursor, training, user):
+    if not user or user["status"] != "approved":
+        return False
+
+    now = now_local()
+    training_dt = get_training_datetime(training)
+    payment_deadline = training_dt + timedelta(hours=24)
+
+    if now < training_dt:
+        return False
+
+    if now > payment_deadline:
+        return False
+
+    registration = get_user_active_main_registration(cursor, training["id"], user["id"])
+
+    if not registration:
+        return False
+
+    if registration["is_paid"] == 1:
+        return False
+
+    return True
+
+def is_training_visible_for_user(cursor, training, user):
+    now = now_local()
+    training_dt = get_training_datetime(training)
+
+    # До начала тренировка видна всем авторизованным пользователям
+    if now < training_dt:
+        return True
+
+    # После начала — ещё 24 часа показываем только тем,
+    # кто был в основном составе
+    visible_until = training_dt + timedelta(hours=24)
+
+    if now <= visible_until and user and user["status"] == "approved":
+        return get_user_active_main_registration(cursor, training["id"], user["id"]) is not None
+    return False
 
 def is_training_hidden_for_users(training):
     """
@@ -493,7 +544,7 @@ def notify_completed_trainings():
 
     for training in trainings:
         training_dt = get_training_datetime(training)
-        finish_dt = training_dt + timedelta(hours=3)
+        finish_dt = training_dt + timedelta(hours=1, minutes=30)
 
         if now_local() >= finish_dt:
             active_players = cursor.execute("""
@@ -666,13 +717,16 @@ def index():
         ORDER BY training_date ASC, training_time ASC
     """).fetchall()
 
-    trainings = [t for t in all_trainings if not is_training_hidden_for_users(t)]
+    trainings = [
+        t for t in all_trainings
+        if is_training_visible_for_user(cursor, t, user)
+    ]
 
     trainings_data = []
 
     for training in trainings:
-        if is_training_finished(training):
-            continue
+        payment_available = can_user_pay_for_training(cursor, training, user)
+        payment_url = get_payment_page_url(training)
 
         active_players = cursor.execute("""
             SELECT * FROM registrations
@@ -712,7 +766,9 @@ def index():
             "registration_status": get_registration_status(training),
             "plus_one_available": can_plus_one_be_added(training, len(active_players)),
             "weekday": weekday_name,
-            "current_user_registration": current_user_registration
+            "current_user_registration": current_user_registration,
+            "payment_available": payment_available,
+            "payment_url": payment_url
         })
 
     db.close()

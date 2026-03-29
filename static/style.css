@@ -1550,3 +1550,94 @@ body {
     transform: rotate(-45deg);
     border-radius: 2px;
 }
+
+.payment-cta-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 58px;
+    margin: 0 0 16px 0;
+    padding: 0 20px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-size: 18px;
+    font-weight: 800;
+    color: #ffffff;
+    background: linear-gradient(180deg, #f08a33 0%, #db7826 100%);
+    box-shadow:
+        0 10px 24px rgba(240, 138, 51, 0.28),
+        inset 0 1px 0 rgba(255,255,255,0.18);
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.payment-cta-btn:hover {
+    transform: translateY(-1px);
+    opacity: 0.96;
+}
+
+/* ===== ГОРИЗОНТАЛЬНАЯ ПРОКРУТКА БЛОКА ТРЕНИРОВОК ===== */
+
+.trainings-slider-wrap {
+    position: relative;
+    margin-bottom: 8px;
+}
+
+.trainings-slider {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px 2px 12px;
+}
+
+.trainings-slider::-webkit-scrollbar {
+    display: none;
+}
+
+.trainings-slider {
+    scrollbar-width: none;
+}
+
+.training-slide {
+    flex: 0 0 calc(100% - 24px);
+    min-width: calc(100% - 24px);
+    margin-bottom: 0 !important;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    animation: trainingCardSlideIn 0.45s ease;
+}
+
+@keyframes trainingCardSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* небольшой визуальный намёк, что справа есть следующая карточка */
+@media (min-width: 601px) {
+    .training-slide {
+        flex: 0 0 calc(92% - 12px);
+        min-width: calc(92% - 12px);
+    }
+}
+
+@media (max-width: 600px) {
+    .trainings-slider {
+        gap: 14px;
+        padding: 4px 0 12px;
+    }
+
+    .training-slide {
+        flex: 0 0 92%;
+        min-width: 92%;
+    }
+}

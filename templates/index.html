@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Запись на тренировки</title>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='11') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='12') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <meta name="theme-color" content="#0f172a">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
@@ -68,179 +68,190 @@
 
         {% else %}
             {% if trainings_data %}
-                {% for item in trainings_data %}
-                    {% set training = item.training %}
-                    {% set players = item.players %}
-                    {% set waitlist = item.waitlist %}
-                    {% set registration_status = item.registration_status %}
-                    {% set plus_one_available = item.plus_one_available %}
-                    {% set current_user_registration = item.current_user_registration %}
+                <div class="trainings-slider-wrap">
+                    <div class="trainings-slider">
+                        {% for item in trainings_data %}
+                            {% set training = item.training %}
+                            {% set players = item.players %}
+                            {% set waitlist = item.waitlist %}
+                            {% set registration_status = item.registration_status %}
+                            {% set plus_one_available = item.plus_one_available %}
+                            {% set current_user_registration = item.current_user_registration %}
+                            {% set payment_available = item.payment_available %}
+                            {% set payment_url = item.payment_url %}
 
-                    <section class="training-card">
-                        <div class="training-top">
-                            <div class="training-main-info">
-                                <div class="training-title-wrap">
+                            <section class="training-card training-slide">
+                                <div class="training-top">
+                                    <div class="training-main-info">
+                                        <div class="training-title-wrap">
 
-                                    <div class="training-weekday">
-                                        {{ item.weekday }}
+                                            <div class="training-weekday">
+                                                {{ item.weekday }}
+                                            </div>
+
+                                            <div class="training-main-line">
+                                                <div class="training-main-left">
+                                                    <div class="training-date-big">
+                                                        {{ training["training_date"][8:10] }}
+                                                        {% set month_num = training["training_date"][5:7] %}
+                                                        {% if month_num == "01" %}ЯНВАРЯ
+                                                        {% elif month_num == "02" %}ФЕВРАЛЯ
+                                                        {% elif month_num == "03" %}МАРТА
+                                                        {% elif month_num == "04" %}АПРЕЛЯ
+                                                        {% elif month_num == "05" %}МАЯ
+                                                        {% elif month_num == "06" %}ИЮНЯ
+                                                        {% elif month_num == "07" %}ИЮЛЯ
+                                                        {% elif month_num == "08" %}АВГУСТА
+                                                        {% elif month_num == "09" %}СЕНТЯБРЯ
+                                                        {% elif month_num == "10" %}ОКТЯБРЯ
+                                                        {% elif month_num == "11" %}НОЯБРЯ
+                                                        {% elif month_num == "12" %}ДЕКАБРЯ
+                                                        {% endif %}
+                                                    </div>
+
+                                                    <div class="training-title-inline">
+                                                        <span class="training-separator">—</span> {{ training["title"] }}
+                                                    </div>
+                                                </div>
+
+                                                <div class="training-time-inline">
+                                                    <span class="training-time-icon"></span>
+                                                    <span class="training-time-text">{{ training["training_time"] }}</span>
+                                                </div>
+                                            </div>
+
+                                        </div>
                                     </div>
 
-                                    <div class="training-main-line">
-                                        <div class="training-main-left">
-                                            <div class="training-date-big">
-                                                {{ training["training_date"][8:10] }}
-                                                {% set month_num = training["training_date"][5:7] %}
-                                                {% if month_num == "01" %}ЯНВАРЯ
-                                                {% elif month_num == "02" %}ФЕВРАЛЯ
-                                                {% elif month_num == "03" %}МАРТА
-                                                {% elif month_num == "04" %}АПРЕЛЯ
-                                                {% elif month_num == "05" %}МАЯ
-                                                {% elif month_num == "06" %}ИЮНЯ
-                                                {% elif month_num == "07" %}ИЮЛЯ
-                                                {% elif month_num == "08" %}АВГУСТА
-                                                {% elif month_num == "09" %}СЕНТЯБРЯ
-                                                {% elif month_num == "10" %}ОКТЯБРЯ
-                                                {% elif month_num == "11" %}НОЯБРЯ
-                                                {% elif month_num == "12" %}ДЕКАБРЯ
+                                    <div class="training-badges training-badges-glow">
+                                        <span class="status-pill status-pill-orange">
+                                            СВОБОДНЫХ МЕСТ: {{ training["max_players"] - players|length }}/{{ training["max_players"] }}
+                                        </span>
+
+                                        {% if registration_status == "open" %}
+                                            <span class="status-pill status-pill-green">ЗАПИСЬ ОТКРЫТА</span>
+                                        {% elif registration_status == "not_started" %}
+                                            <span class="status-pill status-pill-yellow">ЗАПИСЬ ЕЩЁ НЕ НАЧАЛАСЬ</span>
+                                        {% else %}
+                                            <span class="status-pill status-pill-red">ЗАПИСЬ ЗАКРЫТА</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                {% if not current_user_registration and registration_status == "open" %}
+                                    <form method="POST" action="{{ url_for('register_training', training_id=training['id']) }}" class="register-form">
+                                        <button type="submit" class="register-btn">Записаться</button>
+                                    </form>
+                                {% elif current_user_registration %}
+                                    <div class="closed-box closed-box-success">
+                                        <span class="closed-box-success-icon"></span>
+                                        <span>Вы уже записаны на эту тренировку.</span>
+                                    </div>
+                                {% elif registration_status == "not_started" %}
+                                    <div class="closed-box">
+                                        Запись ещё не началась.
+                                    </div>
+                                {% else %}
+                                    <div class="closed-box">
+                                        Время записи на эту тренировку уже закончилось.
+                                    </div>
+                                {% endif %}
+
+                                {% if payment_available %}
+                                    <a href="{{ payment_url }}" class="payment-cta-btn">
+                                        Оплатить тренировку
+                                    </a>
+                                {% endif %}
+
+                                <div class="lists">
+                                    <div class="list-card">
+                                        <details class="dropdown-card">
+                                            <summary class="card-header dropdown-summary">
+                                                <h3>Основной состав</h3>
+                                                <div class="dropdown-meta">
+                                                    <span class="badge badge-green">{{ players|length }}</span>
+                                                    <span class="dropdown-arrow">⌄</span>
+                                                </div>
+                                            </summary>
+
+                                            <div class="dropdown-content-static">
+                                                {% if players %}
+                                                    <ul class="player-list">
+                                                        {% for p in players %}
+                                                            <li class="player-item">
+                                                                <div class="player-info">
+                                                                    <span class="player-name">{{ p["display_name"] }}</span>
+                                                                    <span class="player-status active-status">
+                                                                        {% if p["is_plus_one"] == 1 %}
+                                                                            Добавлен по +1
+                                                                        {% else %}
+                                                                            Подтверждён
+                                                                        {% endif %}
+                                                                    </span>
+                                                                </div>
+
+                                                                <div class="player-actions">
+                                                                    {% if p["user_id"] == user["id"] and p["is_plus_one"] == 0 and plus_one_available %}
+                                                                        <form method="POST" action="{{ url_for('add_plus_one', training_id=training['id']) }}">
+                                                                            <button type="submit" class="plus-one-btn">+1</button>
+                                                                        </form>
+                                                                    {% endif %}
+
+                                                                    {% if p["user_id"] == user["id"] %}
+                                                                        <form method="POST" action="{{ url_for('cancel', registration_id=p['id']) }}">
+                                                                            <button type="submit" class="cancel-btn">Отменить</button>
+                                                                        </form>
+                                                                    {% endif %}
+                                                                </div>
+                                                            </li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                {% else %}
+                                                    <p class="empty-text">Пока никто не записался.</p>
                                                 {% endif %}
                                             </div>
-
-                                            <div class="training-title-inline">
-                                                <span class="training-separator">—</span> {{ training["title"] }}
-                                            </div>
-                                        </div>
-
-                                        <div class="training-time-inline">
-                                            <span class="training-time-icon"></span>
-                                            <span class="training-time-text">{{ training["training_time"] }}</span>
-                                        </div>
+                                        </details>
                                     </div>
 
-                                </div>
-                            </div>
+                                    <div class="list-card">
+                                        <details class="dropdown-card">
+                                            <summary class="card-header dropdown-summary">
+                                                <h3>Живая очередь</h3>
+                                                <div class="dropdown-meta">
+                                                    <span class="badge badge-orange">{{ waitlist|length }}</span>
+                                                    <span class="dropdown-arrow">⌄</span>
+                                                </div>
+                                            </summary>
 
-                            <div class="training-badges training-badges-glow">
-                                <span class="status-pill status-pill-orange">
-                                    СВОБОДНЫХ МЕСТ: {{ training["max_players"] - players|length }}/{{ training["max_players"] }}
-                                </span>
+                                            <div class="dropdown-content-static">
+                                                {% if waitlist %}
+                                                    <ul class="player-list">
+                                                        {% for p in waitlist %}
+                                                            <li class="player-item">
+                                                                <div class="player-info">
+                                                                    <span class="player-name">{{ loop.index }}. {{ p["display_name"] }}</span>
+                                                                    <span class="player-status wait-status">Ожидает место</span>
+                                                                </div>
 
-                                {% if registration_status == "open" %}
-                                    <span class="status-pill status-pill-green">ЗАПИСЬ ОТКРЫТА</span>
-                                {% elif registration_status == "not_started" %}
-                                    <span class="status-pill status-pill-yellow">ЗАПИСЬ ЕЩЁ НЕ НАЧАЛАСЬ</span>
-                                {% else %}
-                                    <span class="status-pill status-pill-red">ЗАПИСЬ ЗАКРЫТА</span>
-                                {% endif %}
-                            </div>
-                        </div>
-
-
-                        {% if not current_user_registration and registration_status == "open" %}
-                            <form method="POST" action="{{ url_for('register_training', training_id=training['id']) }}" class="register-form">
-                                <button type="submit" class="register-btn">Записаться</button>
-                            </form>
-                        {% elif current_user_registration %}
-                            <div class="closed-box closed-box-success">
-                                <span class="closed-box-success-icon"></span>
-                                <span>Вы уже записаны на эту тренировку.</span>
-                            </div>
-                        {% elif registration_status == "not_started" %}
-                            <div class="closed-box">
-                                Запись ещё не началась.
-                            </div>
-                        {% else %}
-                            <div class="closed-box">
-                                Время записи на эту тренировку уже закончилось.
-                            </div>
-                        {% endif %}
-
-                        <div class="lists">
-                            <div class="list-card">
-                                <details class="dropdown-card">
-                                    <summary class="card-header dropdown-summary">
-                                        <h3>Основной состав</h3>
-                                        <div class="dropdown-meta">
-                                            <span class="badge badge-green">{{ players|length }}</span>
-                                            <span class="dropdown-arrow">⌄</span>
-                                        </div>
-                                    </summary>
-
-                                    <div class="dropdown-content-static">
-                                        {% if players %}
-                                            <ul class="player-list">
-                                                {% for p in players %}
-                                                    <li class="player-item">
-                                                        <div class="player-info">
-                                                            <span class="player-name">{{ p["display_name"] }}</span>
-                                                            <span class="player-status active-status">
-                                                                {% if p["is_plus_one"] == 1 %}
-                                                                    Добавлен по +1
-                                                                {% else %}
-                                                                    Подтверждён
+                                                                {% if p["user_id"] == user["id"] %}
+                                                                    <form method="POST" action="{{ url_for('cancel', registration_id=p['id']) }}">
+                                                                        <button type="submit" class="cancel-btn">Отменить</button>
+                                                                    </form>
                                                                 {% endif %}
-                                                            </span>
-                                                        </div>
-
-                                                        <div class="player-actions">
-                                                            {% if p["user_id"] == user["id"] and p["is_plus_one"] == 0 and plus_one_available %}
-                                                                <form method="POST" action="{{ url_for('add_plus_one', training_id=training['id']) }}">
-                                                                    <button type="submit" class="plus-one-btn">+1</button>
-                                                                </form>
-                                                            {% endif %}
-
-                                                            {% if p["user_id"] == user["id"] %}
-                                                                <form method="POST" action="{{ url_for('cancel', registration_id=p['id']) }}">
-                                                                    <button type="submit" class="cancel-btn">Отменить</button>
-                                                                </form>
-                                                            {% endif %}
-                                                        </div>
-                                                    </li>
-                                                {% endfor %}
-                                            </ul>
-                                        {% else %}
-                                            <p class="empty-text">Пока никто не записался.</p>
-                                        {% endif %}
+                                                            </li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                {% else %}
+                                                    <p class="empty-text">Очередь пуста.</p>
+                                                {% endif %}
+                                            </div>
+                                        </details>
                                     </div>
-                                </details>
-                            </div>
-
-                            <div class="list-card">
-                                <details class="dropdown-card">
-                                    <summary class="card-header dropdown-summary">
-                                        <h3>Живая очередь</h3>
-                                        <div class="dropdown-meta">
-                                            <span class="badge badge-orange">{{ waitlist|length }}</span>
-                                            <span class="dropdown-arrow">⌄</span>
-                                        </div>
-                                    </summary>
-
-                                    <div class="dropdown-content-static">
-                                        {% if waitlist %}
-                                            <ul class="player-list">
-                                                {% for p in waitlist %}
-                                                    <li class="player-item">
-                                                        <div class="player-info">
-                                                            <span class="player-name">{{ loop.index }}. {{ p["display_name"] }}</span>
-                                                            <span class="player-status wait-status">Ожидает место</span>
-                                                        </div>
-
-                                                        {% if p["user_id"] == user["id"] %}
-                                                            <form method="POST" action="{{ url_for('cancel', registration_id=p['id']) }}">
-                                                                <button type="submit" class="cancel-btn">Отменить</button>
-                                                            </form>
-                                                        {% endif %}
-                                                    </li>
-                                                {% endfor %}
-                                            </ul>
-                                        {% else %}
-                                            <p class="empty-text">Очередь пуста.</p>
-                                        {% endif %}
-                                    </div>
-                                </details>
-                            </div>
-                        </div>
-                    </section>
-                {% endfor %}
+                                </div>
+                            </section>
+                        {% endfor %}
+                    </div>
+                </div>
             {% else %}
                 <div class="empty-training-box">
                     Пока нет созданных тренировок.
