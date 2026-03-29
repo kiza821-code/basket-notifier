@@ -725,6 +725,24 @@ def index():
     trainings_data = []
 
     for training in trainings:
+
+        registration = None
+
+        if user:
+            registration = cursor.execute("""
+                SELECT *
+                FROM registrations
+                WHERE training_id = ?
+                  AND user_id = ?
+                  AND status = 'active'
+                  AND is_plus_one = 0
+                LIMIT 1
+            """, (training["id"], user["id"])).fetchone()
+
+        # ЕСЛИ ОПЛАЧЕНО — ПРОПУСКАЕМ ТРЕНИРОВКУ
+        if registration and registration["is_paid"] == 1:
+            continue
+
         payment_available = can_user_pay_for_training(cursor, training, user)
         payment_url = get_payment_page_url(training)
 
