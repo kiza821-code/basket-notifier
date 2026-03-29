@@ -1446,3 +1446,21 @@ input[type="datetime-local"] {
         line-height: 1.2 !important;
     }
 }
+
+html, body {
+    margin: 0;
+    padding: 0;
+    background: #05060a;
+}
+
+body {
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at 70% 10%, rgba(255,140,50,0.12), transparent 18%),
+        linear-gradient(180deg, #0b0d14 0%, #030409 100%) !important;
+}
+
+.page {
+    padding-top: 12px !important;
+}
+
