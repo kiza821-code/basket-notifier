@@ -999,3 +999,177 @@ input[type="datetime-local"] {
         letter-spacing: 0.3px !important;
     }
 }
+
+/* ===== ЕДИНАЯ ПОДЛОЖКА КАРТОЧКИ ТРЕНИРОВКИ ===== */
+
+.training-card {
+    background:
+        linear-gradient(180deg, rgba(28, 28, 36, 0.96) 0%, rgba(20, 20, 28, 0.96) 100%) !important;
+    border-radius: 30px !important;
+    padding: 20px !important;
+    box-shadow:
+        0 18px 40px rgba(0, 0, 0, 0.34),
+        inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    overflow: hidden;
+}
+
+/* верхний блок внутри общей карточки */
+.training-top {
+    margin-bottom: 18px !important;
+}
+
+/* статус записан / не записан — как внутренняя секция, а не отдельная карточка */
+.closed-box,
+.empty-training-box {
+    width: 100%;
+    margin: 0 0 16px 0 !important;
+    background: rgba(255,255,255,0.045) !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    border-radius: 22px !important;
+    box-shadow: none !important;
+}
+
+/* контейнер со списками внутри общей карточки */
+.lists {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-top: 0 !important;
+}
+
+/* состав и очередь — не отдельные внешние карточки, а внутренние панели */
+.list-card {
+    width: 100%;
+    margin: 0 !important;
+    background: rgba(255,255,255,0.045) !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    border-radius: 24px !important;
+    box-shadow: none !important;
+    overflow: hidden;
+}
+
+/* заголовки внутренних секций */
+.card-header {
+    padding: 22px 20px !important;
+    min-width: 0;
+}
+
+/* плашки статусов по ширине телефона */
+.training-badges.training-badges-glow {
+    width: 100%;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+    margin-top: 18px !important;
+    margin-bottom: 0 !important;
+}
+
+.status-pill {
+    max-width: 100%;
+    white-space: normal !important;
+    text-align: center;
+}
+
+/* время */
+.training-time-pill {
+    flex-shrink: 0;
+}
+
+/* чтобы блок с датой и названием не ломал ширину */
+.training-main-info {
+    min-width: 0;
+    width: 100%;
+}
+
+.training-title-wrap {
+    min-width: 0;
+    flex: 1;
+}
+
+.training-main-line {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: nowrap;
+}
+
+.training-main-left {
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.training-date-big,
+.training-title-inline {
+    min-width: 0;
+}
+
+/* линия-разделитель внутри общей карточки, если захочешь использовать позже */
+.training-inner-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.06);
+    margin: 16px 0;
+}
+
+/* ===== МОБИЛЬНАЯ АДАПТАЦИЯ ===== */
+@media (max-width: 600px) {
+    .training-card {
+        padding: 16px !important;
+        border-radius: 26px !important;
+    }
+
+    .training-top {
+        margin-bottom: 14px !important;
+    }
+
+    .training-main-info {
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .training-main-line {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .training-main-left {
+        width: 100%;
+        gap: 8px;
+    }
+
+    .training-time-pill {
+        align-self: flex-start;
+    }
+
+    .training-badges.training-badges-glow {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px !important;
+        margin-top: 16px !important;
+    }
+
+    .status-pill {
+        width: 100%;
+        justify-content: center !important;
+        padding: 12px 14px !important;
+        min-height: 46px !important;
+        font-size: 13px !important;
+        line-height: 1.2;
+    }
+
+    .closed-box,
+    .list-card {
+        width: 100%;
+    }
+
+    .card-header {
+        padding: 18px 16px !important;
+    }
+}
