@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Запись на тренировки</title>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='8') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='9') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <meta name="theme-color" content="#0f172a">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
@@ -79,8 +79,6 @@
                     <section class="training-card">
                         <div class="training-top">
                             <div class="training-main-info">
-
-
                                 <div class="training-title-wrap">
 
                                     <div class="training-weekday">
@@ -88,37 +86,38 @@
                                     </div>
 
                                     <div class="training-main-line">
-                                        <div class="training-date-big">
-                                            {{ training["training_date"][8:10] }}
-                                            {% set month_num = training["training_date"][5:7] %}
-                                            {% if month_num == "01" %}ЯНВАРЯ
-                                            {% elif month_num == "02" %}ФЕВРАЛЯ
-                                            {% elif month_num == "03" %}МАРТА
-                                            {% elif month_num == "04" %}АПРЕЛЯ
-                                            {% elif month_num == "05" %}МАЯ
-                                            {% elif month_num == "06" %}ИЮНЯ
-                                            {% elif month_num == "07" %}ИЮЛЯ
-                                            {% elif month_num == "08" %}АВГУСТА
-                                            {% elif month_num == "09" %}СЕНТЯБРЯ
-                                            {% elif month_num == "10" %}ОКТЯБРЯ
-                                            {% elif month_num == "11" %}НОЯБРЯ
-                                            {% elif month_num == "12" %}ДЕКАБРЯ
-                                            {% endif %}
+                                        <div class="training-main-left">
+                                            <div class="training-date-big">
+                                                {{ training["training_date"][8:10] }}
+                                                {% set month_num = training["training_date"][5:7] %}
+                                                {% if month_num == "01" %}ЯНВАРЯ
+                                                {% elif month_num == "02" %}ФЕВРАЛЯ
+                                                {% elif month_num == "03" %}МАРТА
+                                                {% elif month_num == "04" %}АПРЕЛЯ
+                                                {% elif month_num == "05" %}МАЯ
+                                                {% elif month_num == "06" %}ИЮНЯ
+                                                {% elif month_num == "07" %}ИЮЛЯ
+                                                {% elif month_num == "08" %}АВГУСТА
+                                                {% elif month_num == "09" %}СЕНТЯБРЯ
+                                                {% elif month_num == "10" %}ОКТЯБРЯ
+                                                {% elif month_num == "11" %}НОЯБРЯ
+                                                {% elif month_num == "12" %}ДЕКАБРЯ
+                                                {% endif %}
+                                            </div>
+
+                                            <div class="training-title-inline">
+                                                <span class="training-separator">—</span> {{ training["title"] }}
+                                            </div>
                                         </div>
 
-                                        <div class="training-title-inline">
-                                            <span class="training-separator">—</span> {{ training["title"] }}
+                                        <div class="training-time-pill">
+                                            <span class="training-time-icon"></span>
+                                            <span>{{ training["training_time"] }}</span>
                                         </div>
                                     </div>
 
                                 </div>
                             </div>
-
-                            <div class="training-time-pill">
-                                <span class="training-time-icon">🕒</span>
-                                <span>{{ training["training_time"] }}</span>
-                            </div>
-                        </div>
 
                             <div class="training-badges training-badges-glow">
                                 <span class="status-pill status-pill-orange">
@@ -134,6 +133,7 @@
                                 {% endif %}
                             </div>
                         </div>
+
 
                         {% if not current_user_registration and registration_status == "open" %}
                             <form method="POST" action="{{ url_for('register_training', training_id=training['id']) }}" class="register-form">

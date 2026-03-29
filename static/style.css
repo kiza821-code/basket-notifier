@@ -1173,3 +1173,276 @@ input[type="datetime-local"] {
         padding: 18px 16px !important;
     }
 }
+
+/* ===== ОБЩАЯ ПОДЛОЖКА НА ВСЮ ТРЕНИРОВКУ ===== */
+.training-card {
+    background:
+        linear-gradient(180deg, rgba(24, 24, 34, 0.96) 0%, rgba(17, 17, 26, 0.96) 100%) !important;
+    border-radius: 30px !important;
+    padding: 20px !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    box-shadow:
+        0 18px 40px rgba(0, 0, 0, 0.34),
+        inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden !important;
+}
+
+.training-top {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 18px !important;
+    margin-bottom: 16px !important;
+}
+
+.training-main-info {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 16px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+}
+
+.training-title-wrap {
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+
+.training-weekday {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    letter-spacing: 2px !important;
+    color: rgba(255,255,255,0.55) !important;
+    margin-bottom: 10px !important;
+    text-transform: uppercase !important;
+}
+
+.training-main-line {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    width: 100% !important;
+}
+
+.training-main-left {
+    display: flex !important;
+    align-items: baseline !important;
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+    min-width: 0 !important;
+    flex: 1 !important;
+}
+
+.training-date-big {
+    font-size: 22px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.8px !important;
+    color: #ffffff !important;
+    line-height: 1.1 !important;
+}
+
+.training-title-inline {
+    font-size: 22px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.2px !important;
+    color: #ffffff !important;
+    line-height: 1.1 !important;
+}
+
+.training-time-pill {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 10px 14px !important;
+    border-radius: 999px !important;
+    background: rgba(255,255,255,0.06) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    color: #fff !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+}
+
+/* иконка часов без emoji */
+.training-time-icon {
+    width: 18px !important;
+    height: 18px !important;
+    border: 2px solid rgba(255,255,255,0.68) !important;
+    border-radius: 50% !important;
+    position: relative !important;
+    display: inline-block !important;
+    flex-shrink: 0 !important;
+}
+
+.training-time-icon::before {
+    content: "" !important;
+    position: absolute !important;
+    width: 2px !important;
+    height: 5px !important;
+    background: rgba(255,255,255,0.72) !important;
+    left: 7px !important;
+    top: 3px !important;
+    border-radius: 2px !important;
+}
+
+.training-time-icon::after {
+    content: "" !important;
+    position: absolute !important;
+    width: 5px !important;
+    height: 2px !important;
+    background: rgba(255,255,255,0.72) !important;
+    left: 7px !important;
+    top: 8px !important;
+    border-radius: 2px !important;
+}
+
+/* статусы */
+.training-badges.training-badges-glow {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    margin: 0 !important;
+}
+
+.status-pill {
+    width: 100% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 48px !important;
+    padding: 0 18px !important;
+    border-radius: 999px !important;
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.4px !important;
+    text-transform: uppercase !important;
+    text-align: center !important;
+    white-space: normal !important;
+    border: 2px solid transparent !important;
+}
+
+.status-pill-orange {
+    color: #ff9b3d !important;
+    background: rgba(255, 140, 40, 0.10) !important;
+    border-color: rgba(255, 140, 40, 0.75) !important;
+    box-shadow:
+        0 0 0 1px rgba(255, 140, 40, 0.18) inset,
+        0 0 12px rgba(255, 140, 40, 0.25),
+        0 0 24px rgba(255, 140, 40, 0.12) !important;
+}
+
+.status-pill-green {
+    color: #5df08f !important;
+    background: rgba(63, 214, 111, 0.10) !important;
+    border-color: rgba(93, 240, 143, 0.72) !important;
+    box-shadow:
+        0 0 0 1px rgba(93, 240, 143, 0.14) inset,
+        0 0 12px rgba(93, 240, 143, 0.22),
+        0 0 24px rgba(93, 240, 143, 0.10) !important;
+}
+
+.status-pill-yellow {
+    color: #ffbe55 !important;
+    background: rgba(255, 190, 85, 0.10) !important;
+    border-color: rgba(255, 190, 85, 0.68) !important;
+}
+
+.status-pill-red {
+    color: #ff7f7f !important;
+    background: rgba(255, 90, 90, 0.10) !important;
+    border-color: rgba(255, 110, 110, 0.68) !important;
+}
+
+/* внутренние секции внутри общей подложки */
+.closed-box,
+.empty-training-box {
+    width: 100% !important;
+    margin: 0 0 14px 0 !important;
+    background: rgba(255,255,255,0.045) !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    border-radius: 22px !important;
+    box-shadow: none !important;
+}
+
+.lists {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+    margin-top: 0 !important;
+}
+
+.list-card {
+    width: 100% !important;
+    margin: 0 !important;
+    background: rgba(255,255,255,0.045) !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    border-radius: 24px !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+}
+
+.card-header {
+    padding: 20px 18px !important;
+}
+
+/* мобильная версия */
+@media (max-width: 600px) {
+    .training-card {
+        padding: 16px !important;
+        border-radius: 26px !important;
+    }
+
+    .training-main-info {
+        gap: 12px !important;
+    }
+
+    .training-calendar {
+        width: 64px !important;
+        min-width: 64px !important;
+        height: 82px !important;
+    }
+
+    .training-calendar-day {
+        font-size: 30px !important;
+    }
+
+    .training-calendar-month {
+        font-size: 12px !important;
+    }
+
+    .training-main-line {
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        justify-content: space-between !important;
+        gap: 10px !important;
+    }
+
+    .training-main-left {
+        flex: 1 !important;
+        min-width: 0 !important;
+    }
+
+    .training-date-big {
+        font-size: 20px !important;
+    }
+
+    .training-title-inline {
+        font-size: 18px !important;
+    }
+
+    .training-time-pill {
+        margin-top: 0 !important;
+        align-self: flex-start !important;
+        font-size: 14px !important;
+        padding: 9px 12px !important;
+    }
+
+    .status-pill {
+        min-height: 46px !important;
+        padding: 12px 14px !important;
+        font-size: 13px !important;
+        line-height: 1.2 !important;
+    }
+}
