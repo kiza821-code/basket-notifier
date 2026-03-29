@@ -142,7 +142,7 @@
                                 </div>
 
                                 {% if training_started and payment_available %}
-                                    <div class="closed-box closed-box-success">
+                                    <div class="closed-box closed-box-payment">
                                         <span class="closed-box-success-icon"></span>
                                         <span>Не забудь оплатить тренировку.</span>
                                     </div>
@@ -151,7 +151,7 @@
                                         <button type="submit" class="register-btn">Записаться</button>
                                     </form>
                                 {% elif current_user_registration %}
-                                    <div class="closed-box closed-box-success">
+                                    <div class="closed-box closed-box-payment">
                                         <span class="closed-box-success-icon"></span>
                                         <span>Вы уже записаны на эту тренировку.</span>
                                     </div>
