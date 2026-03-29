@@ -120,15 +120,17 @@
                             </div>
                         </div>
 
-                            <div class="training-badges">
-                                <span class="badge badge-blue">Мест: {{ players|length }}/{{ training["max_players"] }}</span>
+                            <div class="training-badges training-badges-glow">
+                                <span class="status-pill status-pill-orange">
+                                    СВОБОДНЫХ МЕСТ: {{ training["max_players"] - players|length }}/{{ training["max_players"] }}
+                                </span>
 
                                 {% if registration_status == "open" %}
-                                    <span class="badge badge-green">Запись открыта</span>
+                                    <span class="status-pill status-pill-green">ЗАПИСЬ ОТКРЫТА</span>
                                 {% elif registration_status == "not_started" %}
-                                    <span class="badge badge-orange">Запись ещё не началась</span>
+                                    <span class="status-pill status-pill-yellow">ЗАПИСЬ ЕЩЁ НЕ НАЧАЛАСЬ</span>
                                 {% else %}
-                                    <span class="badge badge-red">Запись закрыта</span>
+                                    <span class="status-pill status-pill-red">ЗАПИСЬ ЗАКРЫТА</span>
                                 {% endif %}
                             </div>
                         </div>
