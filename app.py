@@ -759,6 +759,8 @@ def index():
         ]
         weekday_name = weekday_map[date_obj.weekday()]
 
+        training_started = now_local() >= get_training_datetime(training)
+
         trainings_data.append({
             "training": training,
             "players": active_players,
@@ -768,7 +770,8 @@ def index():
             "weekday": weekday_name,
             "current_user_registration": current_user_registration,
             "payment_available": payment_available,
-            "payment_url": payment_url
+            "payment_url": payment_url,
+            "training_started": training_started
         })
 
     db.close()
