@@ -5,288 +5,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Управление тренировкой</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <style>
-        .training-detail-page {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 24px 16px 40px;
-        }
-
-        .detail-card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 22px;
-            padding: 24px;
-            margin-bottom: 22px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
-        }
-
-        .detail-title {
-            margin: 0 0 18px;
-            font-size: 34px;
-            font-weight: 800;
-            color: #0b1635;
-        }
-
-        .detail-subtitle {
-            margin: 0 0 18px;
-            font-size: 26px;
-            font-weight: 800;
-            color: #0b1635;
-        }
-
-        .training-form-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(220px, 1fr));
-            gap: 16px 18px;
-        }
-
-        .field-block {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .field-block label {
-            font-size: 15px;
-            font-weight: 700;
-            color: #243a63;
-        }
-
-        .field-block input {
-            height: 46px;
-            border: 1px solid #ccd5e4;
-            border-radius: 12px;
-            padding: 0 14px;
-            font-size: 16px;
-            color: #0b1635;
-            background: #fff;
-        }
-
-        .form-actions {
-            margin-top: 20px;
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .detail-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 44px;
-            padding: 0 18px;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 700;
-            text-decoration: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .detail-btn-primary {
-            background: #2f67e8;
-            color: #fff;
-        }
-
-        .detail-btn-secondary {
-            background: #0b1635;
-            color: #fff;
-        }
-
-        .detail-btn-danger {
-            background: #d93f5f;
-            color: #fff;
-        }
-
-        .detail-btn-success {
-            background: #21a866;
-            color: #fff;
-        }
-
-        .detail-btn-muted {
-            background: #7a859b;
-            color: #fff;
-        }
-
-        .members-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        .member-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 16px;
-            padding: 16px;
-            border: 1px solid #dde4ef;
-            border-radius: 16px;
-            background: #f8fbff;
-        }
-
-        .member-main {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            min-width: 0;
-        }
-
-        .member-name {
-            font-size: 18px;
-            font-weight: 800;
-            color: #0b1635;
-        }
-
-        .member-email {
-            font-size: 14px;
-            color: #55657f;
-            word-break: break-word;
-        }
-
-        .member-badges {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            min-height: 30px;
-            padding: 0 10px;
-            border-radius: 999px;
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        .status-paid {
-            background: #dcf6e9;
-            color: #0f7a46;
-        }
-
-        .status-not-paid {
-            background: #ffe3e8;
-            color: #b42343;
-        }
-
-        .status-plus-one {
-            background: #e9edff;
-            color: #3551c7;
-        }
-
-        .member-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-        }
-
-        .empty-text {
-            margin: 0;
-            font-size: 16px;
-            color: #55657f;
-        }
-
-        @media (max-width: 800px) {
-            .training-form-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .member-item {
-                flex-direction: column;
-            }
-
-            .member-actions {
-                justify-content: flex-start;
-            }
-
-            .detail-title {
-                font-size: 28px;
-            }
-
-            .detail-subtitle {
-                font-size: 22px;
-            }
-        }
-    </style>
 </head>
 <body>
-<div class="training-detail-page">
+<div class="page">
+    <div class="container">
 
-    <section class="detail-card">
-        <h1 class="detail-title">Управление тренировкой</h1>
+    <section class="training-card">
+        <h1 style="margin-bottom: 20px;">🏀 Управление тренировкой</h1>
 
-        <form method="post" action="{{ url_for('admin_training_update', training_id=training['id']) }}">
-            <div class="training-form-grid">
-                <div class="field-block">
-                    <label for="title">Название</label>
-                    <input id="title" type="text" name="title" value="{{ training['title'] }}" required>
-                </div>
-
-                <div class="field-block">
-                    <label for="training_date">Дата</label>
-                    <input id="training_date" type="date" name="training_date" value="{{ training['training_date'] }}" required>
-                </div>
-
-                <div class="field-block">
-                    <label for="training_time">Время</label>
-                    <input id="training_time" type="time" name="training_time" value="{{ training['training_time'] }}" required>
-                </div>
-
-                <div class="field-block">
-                    <label for="max_players">Максимум игроков</label>
-                    <input id="max_players" type="number" name="max_players" value="{{ training['max_players'] }}" required>
-                </div>
-
-                <div class="field-block">
-                    <label for="registration_start">Начало записи</label>
-                    <input id="registration_start" type="datetime-local" name="registration_start" value="{{ training['registration_start'] }}" required>
-                </div>
-
-                <div class="field-block">
-                    <label for="registration_end">Конец записи</label>
-                    <input id="registration_end" type="datetime-local" name="registration_end" value="{{ training['registration_end'] }}" required>
-                </div>
-            </div>
-
-            <div class="form-actions">
-                <button type="submit" class="detail-btn detail-btn-primary">Сохранить изменения</button>
-                <a href="{{ url_for('admin_panel') }}" class="detail-btn detail-btn-secondary">Назад в админку</a>
-            </div>
+        <form method="post" action="{{ url_for('admin_training_update', training_id=training['id']) }}" class="admin-form">
+            <input type="text" name="title" value="{{ training['title'] }}" required>
+            <input type="date" name="training_date" value="{{ training['training_date'] }}" required>
+            <input type="time" name="training_time" value="{{ training['training_time'] }}" required>
+            <input type="number" name="max_players" value="{{ training['max_players'] }}" required>
+            <input type="datetime-local" name="registration_start" value="{{ training['registration_start'] }}" required>
+            <input type="datetime-local" name="registration_end" value="{{ training['registration_end'] }}" required>
+            <button type="submit">Сохранить изменения</button>
         </form>
+
+        <div class="admin-actions" style="margin-top: 16px;">
+            <a href="{{ url_for('admin_panel') }}" class="action-btn dark-btn">Назад в админку</a>
+        </div>
     </section>
 
-    <section class="detail-card">
-        <h2 class="detail-subtitle">Основной состав</h2>
+    <section class="training-card">
+        <div class="card-header">
+            <h3>Основной состав</h3>
+            <span class="badge badge-green">{{ active_players|length }}</span>
+        </div>
 
         {% if active_players %}
-            <ul class="members-list">
+            <ul class="player-list">
                 {% for p in active_players %}
-                    <li class="member-item">
-                        <div class="member-main">
-                            <div class="member-name">{{ p["display_name"] }}</div>
-                            <div class="member-email">{{ p["email"] }}</div>
+                    <li class="player-item">
+                        <div class="player-info">
+                            <span class="player-name">{{ p["display_name"] }}</span>
+                            <span class="player-status active-status">{{ p["email"] }}</span>
 
-                            <div class="member-badges">
+                            <span class="player-status {% if p['is_paid'] == 1 %}active-status{% else %}wait-status{% endif %}">
                                 {% if p["is_paid"] == 1 %}
-                                    <span class="status-badge status-paid">оплачено</span>
+                                    оплачено
                                 {% else %}
-                                    <span class="status-badge status-not-paid">не оплачено</span>
+                                    не оплачено
                                 {% endif %}
-
-                                {% if p["is_plus_one"] == 1 %}
-                                    <span class="status-badge status-plus-one">гость +1</span>
-                                {% endif %}
-                            </div>
+                                {% if p["is_plus_one"] == 1 %} | гость +1{% endif %}
+                            </span>
                         </div>
 
-                        <div class="member-actions">
+                        <div class="player-actions">
                             <a href="{{ url_for('toggle_payment', registration_id=p['id']) }}"
-                               class="detail-btn {% if p['is_paid'] == 1 %}detail-btn-muted{% else %}detail-btn-success{% endif %}">
+                               class="action-btn {% if p['is_paid'] == 1 %}dark-btn{% else %}blue-btn{% endif %}">
                                 {% if p["is_paid"] == 1 %}
                                     Снять оплату
                                 {% else %}
@@ -295,7 +63,7 @@
                             </a>
 
                             <a href="{{ url_for('admin_remove_registration', training_id=training['id'], registration_id=p['id']) }}"
-                               class="detail-btn detail-btn-danger"
+                               class="action-btn red-btn"
                                onclick="return confirm('Удалить участника из тренировки?');">
                                 Удалить
                             </a>
@@ -308,21 +76,24 @@
         {% endif %}
     </section>
 
-    <section class="detail-card">
-        <h2 class="detail-subtitle">Живая очередь</h2>
+    <section class="training-card">
+        <div class="card-header">
+            <h3>Живая очередь</h3>
+            <span class="badge badge-orange">{{ waitlist_players|length }}</span>
+        </div>
 
         {% if waitlist_players %}
-            <ul class="members-list">
+            <ul class="player-list">
                 {% for p in waitlist_players %}
-                    <li class="member-item">
-                        <div class="member-main">
-                            <div class="member-name">{{ p["display_name"] }}</div>
-                            <div class="member-email">{{ p["email"] }}</div>
+                    <li class="player-item">
+                        <div class="player-info">
+                            <span class="player-name">{{ p["display_name"] }}</span>
+                            <span class="player-status wait-status">{{ p["email"] }}</span>
                         </div>
 
-                        <div class="member-actions">
+                        <div class="player-actions">
                             <a href="{{ url_for('admin_remove_registration', training_id=training['id'], registration_id=p['id']) }}"
-                               class="detail-btn detail-btn-danger"
+                               class="action-btn red-btn"
                                onclick="return confirm('Удалить участника из очереди?');">
                                 Удалить
                             </a>
@@ -335,6 +106,7 @@
         {% endif %}
     </section>
 
+    </div>
 </div>
 </body>
 </html>
