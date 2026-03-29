@@ -77,10 +77,8 @@ body {
 }
 
 .hero-actions {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-top: 18px;
+    margin-top: 24px;
+    max-width: 340px;
 }
 
 .training-card {
@@ -684,21 +682,24 @@ input[type="datetime-local"] {
 
 /* текст */
 .hero-text {
+    position: relative;
     z-index: 2;
+    max-width: 100%;
 }
 
 .hero-new h1 {
     font-size: 44px;
-    line-height: 1.05;
+    line-height: 1.02;
     font-weight: 800;
-    color: white;
-    margin-bottom: 10px;
+    margin: 0 0 12px 0;
+    color: #fff;
+    letter-spacing: -0.03em;
 }
 
 .hero-subtitle {
     font-size: 16px;
-    color: rgba(255,255,255,0.6);
-    letter-spacing: 1px;
+    color: rgba(255,255,255,0.7);
+    margin: 0;
 }
 
 /* glow эффект под мячом */
@@ -719,25 +720,24 @@ input[type="datetime-local"] {
 }
 
 .hero-new {
-    min-height: 220px;
+    min-height: 260px;
+    padding: 30px 170px 28px 24px !important;
 }
 
 .hero-ball {
     position: absolute !important;
-    right: 24px !important;
-    top: 24px !important;
+    right: 22px !important;
+    top: 26px !important;
     width: 110px !important;
     height: 110px !important;
-    display: block !important;
+    z-index: 1;
 }
 
 .hero-ball img {
-    display: block !important;
     width: 110px !important;
     height: 110px !important;
-    max-width: 110px !important;
-    max-height: 110px !important;
     object-fit: contain !important;
+    display: block;
 }
 
 .training-main-info {
@@ -887,14 +887,39 @@ input[type="datetime-local"] {
         font-size: 16px;
         padding: 9px 12px;
     }
+
+    @media (max-width: 600px) {
+    .hero-new {
+        min-height: 240px;
+        padding: 28px 140px 24px 20px !important;
+    }
+
+    .hero-new h1 {
+        font-size: 40px;
+    }
+
+    .hero-ball {
+        right: 16px !important;
+        top: 22px !important;
+        width: 96px !important;
+        height: 96px !important;
+    }
+
+    .hero-ball img {
+        width: 96px !important;
+        height: 96px !important;
+    }
+}
 }
 
 .training-main-line {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    flex-wrap: wrap;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: baseline !important;
+    gap: 12px !important;
+    width: 100% !important;
 }
+
 
 .training-date-big {
     font-size: 22px;
@@ -1096,14 +1121,6 @@ input[type="datetime-local"] {
     flex-wrap: nowrap;
 }
 
-.training-main-left {
-    min-width: 0;
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
 .training-date-big,
 .training-title-inline {
     min-width: 0;
@@ -1136,11 +1153,6 @@ input[type="datetime-local"] {
         flex-direction: column;
         align-items: flex-start;
         gap: 10px;
-    }
-
-    .training-main-left {
-        width: 100%;
-        gap: 8px;
     }
 
     .training-time-pill {
@@ -1233,6 +1245,22 @@ input[type="datetime-local"] {
     flex: 1 !important;
 }
 
+.training-time-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #ffffff;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.training-time-text {
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.1;
+    color: #ffffff;
+}
+
 .training-date-big {
     font-size: 22px !important;
     font-weight: 800 !important;
@@ -1268,11 +1296,12 @@ input[type="datetime-local"] {
 .training-time-icon {
     width: 18px !important;
     height: 18px !important;
-    border: 2px solid rgba(255,255,255,0.68) !important;
+    border: 2px solid rgba(255,255,255,0.65) !important;
     border-radius: 50% !important;
     position: relative !important;
     display: inline-block !important;
     flex-shrink: 0 !important;
+    background: transparent !important;
 }
 
 .training-time-icon::before {
@@ -1439,6 +1468,10 @@ input[type="datetime-local"] {
         padding: 9px 12px !important;
     }
 
+    .training-time-text {
+        font-size: 20px;
+    }
+
     .status-pill {
         min-height: 46px !important;
         padding: 12px 14px !important;
@@ -1464,3 +1497,56 @@ body {
     padding-top: 12px !important;
 }
 
+.closed-box {
+    width: 100% !important;
+    margin: 0 0 14px 0 !important;
+    border-radius: 22px !important;
+    padding: 18px 20px !important;
+}
+
+.closed-box-success {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(52, 199, 89, 0.10) !important;
+    border: 1px solid rgba(93, 240, 143, 0.24) !important;
+    box-shadow:
+        inset 0 0 0 1px rgba(93, 240, 143, 0.05),
+        0 0 16px rgba(93, 240, 143, 0.08) !important;
+    color: #63f092 !important;
+}
+
+.closed-box-success-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(93, 240, 143, 0.18);
+    border: 1px solid rgba(93, 240, 143, 0.34);
+    position: relative;
+    flex-shrink: 0;
+    box-shadow: 0 0 12px rgba(93, 240, 143, 0.14);
+}
+
+.closed-box-success-icon::before {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 10px;
+    width: 4px;
+    height: 2px;
+    background: #63f092;
+    transform: rotate(45deg);
+    border-radius: 2px;
+}
+
+.closed-box-success-icon::after {
+    content: "";
+    position: absolute;
+    left: 9px;
+    top: 8px;
+    width: 8px;
+    height: 2px;
+    background: #63f092;
+    transform: rotate(-45deg);
+    border-radius: 2px;
+}
