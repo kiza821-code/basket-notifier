@@ -145,7 +145,7 @@
                                     <form method="POST" action="{{ url_for('register_training', training_id=training['id']) }}" class="register-form">
                                         <button type="submit" class="register-btn">Записаться</button>
                                     </form>
-                                {% elif current_user_registration %}
+                                {% elif current_user_registration and not training_started %}
                                     <div class="closed-box closed-box-success">
                                         <span class="closed-box-success-icon"></span>
                                         <span>Вы уже записаны на эту тренировку.</span>
