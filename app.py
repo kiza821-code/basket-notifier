@@ -522,10 +522,10 @@ def can_plus_one_be_added(training, active_count):
     training_dt = get_training_datetime(training)
     now = now_local()
 
-    within_12_hours = now >= training_dt - timedelta(hours=12)
+    plus_one_open_dt = training_dt.replace(hour=8, minute=0, second=0, microsecond=0)
     before_training = now < training_dt
 
-    return within_12_hours and before_training and active_count < training["max_players"]
+    return now >= plus_one_open_dt and before_training and active_count < training["max_players"]
 
 def notify_completed_trainings():
     db = get_db()
