@@ -248,25 +248,10 @@
         </div>
         {% endif %}
 
-        <div class="payment-link-box">
-            <div class="payment-link-label">Ссылка для оплаты</div>
-            <div class="payment-link-value">{{ payment_link }}</div>
-        </div>
-
-        {% if payment_qr %}
-        <div class="payment-qr-box">
-            <div class="payment-qr-label">QR-код для оплаты</div>
-            <img
-                class="payment-qr-image"
-                src="{{ url_for('static', filename=payment_qr) }}"
-                alt="QR-код для оплаты"
-            >
-        </div>
-        {% endif %}
 
         <div class="payment-actions">
             <a href="{{ payment_link }}" class="payment-btn payment-btn-primary" target="_blank" rel="noopener noreferrer">
-                Перейти к оплате
+                Оплата через Сбер
             </a>
 
             <form method="POST"
