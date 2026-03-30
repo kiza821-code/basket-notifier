@@ -849,7 +849,7 @@ def payment_tuesday():
     return render_template(
         "payment_page.html",
         payment_title="Оплата тренировки во вторник",
-        payment_text="Оплатите 200 ₽ по ссылке.",
+        payment_text="Оплатите 200 ₽",
         payment_link=PAYMENT_LINK_TUESDAY
     )
 
