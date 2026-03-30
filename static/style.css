@@ -1834,8 +1834,8 @@ body {
     font-weight: 800;
     color: var(--text-main);
     word-break: break-word;
-    text-align: left;
-    text-decoration: none !important;
+    text-align: center;
+    width: 100%;
 }
 
 .payment-copy-btn,
