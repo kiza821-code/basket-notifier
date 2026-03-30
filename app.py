@@ -843,14 +843,57 @@ def admin_panel():
         trainings=trainings
     )
 
+@app.route("/payment/confirm/<weekday_key>", methods=["POST"])
+@login_required
+def confirm_payment(weekday_key):
+    user = get_current_user()
+
+    weekday_map = {
+        "tuesday": 1,
+        "thursday": 3,
+        "friday": 4,
+    }
+
+    if weekday_key not in weekday_map:
+        return render_message_page("Ошибка", "Некорректный тип оплаты.")
+
+    unpaid_training = get_user_active_unpaid_training_for_weekday(
+        user["id"],
+        weekday_map[weekday_key]
+    )
+
+    if not unpaid_training:
+        return render_message_page(
+            "Оплата не найдена",
+            "Для этого дня нет подходящей неоплаченной тренировки."
+        )
+
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+        UPDATE registrations
+        SET is_paid = 1
+        WHERE id = ?
+    """, (unpaid_training["id"],))
+
+    db.commit()
+    db.close()
+
+    return render_message_page(
+        "Спасибо",
+        "Оплата отмечена. Тренировка больше не будет показываться в списке."
+    )
+
 @app.route("/payment/tuesday")
 @login_required
 def payment_tuesday():
     return render_template(
         "payment_page.html",
         payment_title="Оплата тренировки во вторник",
-        payment_text="Оплатите 200 ₽",
-        payment_link=PAYMENT_LINK_TUESDAY
+        payment_text="Оплатите 200 ₽ по ссылке.",
+        payment_link=PAYMENT_LINK_TUESDAY,
+        payment_day_key="tuesday"
     )
 
 
@@ -861,7 +904,8 @@ def payment_thursday():
         "payment_page.html",
         payment_title="Оплата тренировки в четверг",
         payment_text="Оплатите 200 ₽ по ссылке.",
-        payment_link=PAYMENT_LINK_THURSDAY
+        payment_link=PAYMENT_LINK_THURSDAY,
+        payment_day_key="thursday"
     )
 
 @app.route("/payment/friday")

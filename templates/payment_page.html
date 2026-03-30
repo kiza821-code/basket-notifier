@@ -106,6 +106,16 @@
             color: white;
         }
 
+        .payment-btn-success {
+            background: #21a866;
+            color: white;
+            width: 100%;
+        }
+
+        .payment-actions form {
+            width: 100%;
+        }
+
         @media (max-width: 640px) {
             .payment-card {
                 padding: 24px 18px;
@@ -138,8 +148,14 @@
 
             <div class="payment-actions">
                 <a href="{{ payment_link }}" class="payment-btn payment-btn-primary" target="_blank" rel="noopener noreferrer">
-                    Оплата через Сбер
+                    Перейти к оплате
                 </a>
+
+                <form method="POST" action="{{ url_for('confirm_payment', weekday_key=payment_day_key) }}">
+                    <button type="submit" class="payment-btn payment-btn-success">
+                        Оплатил
+                    </button>
+                </form>
 
                 <a href="{{ url_for('index') }}" class="payment-btn payment-btn-secondary">
                     Назад на главную
