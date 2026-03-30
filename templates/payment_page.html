@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ payment_title }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='12') }}">
 </head>
 <body>
 
 <div class="page">
     <div class="container">
         <section class="training-card payment-card-app">
-            <div class="message-icon payment-icon-app">💳</div>
+            <div class="payment-icon-app">💳</div>
 
             <h1 class="payment-title-app">{{ payment_title }}</h1>
 
@@ -23,7 +23,7 @@
 
                 <div class="payment-phone-row-app">
                     <div class="payment-phone-value-app" id="paymentPhone">{{ payment_phone }}</div>
-                    <button type="button" class="action-btn dark-btn payment-copy-btn" onclick="copyPaymentPhone()">
+                    <button type="button" class="payment-copy-btn" onclick="copyPaymentPhone()">
                         Скопировать номер
                     </button>
                 </div>
@@ -34,19 +34,19 @@
 
 
             <div class="payment-actions-app">
-                <a href="{{ payment_link }}" class="action-btn blue-btn payment-action-btn" target="_blank" rel="noopener noreferrer">
+                <a href="{{ payment_link }}" class="payment-btn-app payment-btn-app-primary" target="_blank" rel="noopener noreferrer">
                     Оплата через Сбер
                 </a>
 
                 <form method="POST"
                       action="{{ url_for('confirm_payment', weekday_key=payment_day_key) }}"
                       onsubmit="return confirm('Подтвердить, что вы оплатили тренировку?');">
-                    <button type="submit" class="action-btn payment-paid-btn payment-action-btn">
+                    <button type="submit" class="payment-btn-app payment-btn-app-success">
                         Оплатил
                     </button>
                 </form>
 
-                <a href="{{ url_for('index') }}" class="action-btn dark-btn payment-action-btn">
+                <a href="{{ url_for('index') }}" class="payment-btn-app payment-btn-app-dark">
                     Назад на главную
                 </a>
             </div>
@@ -63,14 +63,10 @@ function copyPaymentPhone() {
 
     navigator.clipboard.writeText(phone)
         .then(() => {
-            if (status) {
-                status.textContent = "Номер скопирован";
-            }
+            if (status) status.textContent = "Номер скопирован";
         })
         .catch(() => {
-            if (status) {
-                status.textContent = "Не удалось скопировать номер";
-            }
+            if (status) status.textContent = "Не удалось скопировать номер";
         });
 }
 </script>

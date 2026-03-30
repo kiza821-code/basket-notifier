@@ -1773,3 +1773,173 @@ body {
         font-size: 21px;
     }
 }
+
+/* ===== PAYMENT PAGE FIXED ===== */
+
+.payment-card-app {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 28px 22px !important;
+}
+
+.payment-icon-app {
+    font-size: 40px;
+    margin-bottom: 18px;
+}
+
+.payment-title-app {
+    margin: 0 0 12px 0;
+    font-size: 34px;
+    line-height: 1.08;
+    font-weight: 800;
+    color: var(--text-main);
+    letter-spacing: -0.03em;
+}
+
+.payment-text-app {
+    margin: 0 0 22px 0;
+    font-size: 18px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.payment-panel {
+    width: 100%;
+    background: rgba(255,255,255,0.045);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 22px;
+    padding: 18px 16px;
+    margin-bottom: 16px;
+}
+
+.payment-panel-label {
+    margin-bottom: 10px;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.payment-phone-row-app {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+}
+
+.payment-phone-value-app {
+    font-size: 28px;
+    line-height: 1.15;
+    font-weight: 800;
+    color: var(--text-main);
+    word-break: break-word;
+    text-align: left;
+    text-decoration: none !important;
+}
+
+.payment-copy-btn,
+.payment-btn-app {
+    display: flex;
+    width: 100%;
+    min-height: 54px;
+    align-items: center;
+    justify-content: center;
+    padding: 0 18px;
+    border-radius: 18px;
+    border: none;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.payment-copy-btn {
+    background: #2a2a31;
+    color: var(--text-main);
+    border: 1px solid var(--line);
+}
+
+.payment-copy-btn:hover {
+    background: #34343d;
+}
+
+.copy-status-app {
+    min-height: 20px;
+    margin-top: 10px;
+    font-size: 14px;
+    color: var(--success-text);
+    text-align: left;
+}
+
+.payment-qr-image-app {
+    width: 220px;
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    border-radius: 16px;
+    background: #fff;
+    padding: 8px;
+}
+
+.payment-actions-app {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    margin-top: 8px;
+}
+
+.payment-actions-app form {
+    width: 100%;
+    margin: 0;
+}
+
+.payment-btn-app-primary {
+    background: var(--accent);
+    color: #fff;
+}
+
+.payment-btn-app-primary:hover {
+    background: var(--accent-hover);
+}
+
+.payment-btn-app-success {
+    background: rgba(76, 217, 100, 0.14);
+    color: var(--success-text);
+    border: 1px solid rgba(76, 217, 100, 0.18);
+}
+
+.payment-btn-app-success:hover {
+    background: rgba(76, 217, 100, 0.22);
+}
+
+.payment-btn-app-dark {
+    background: #2a2a31;
+    color: var(--text-main);
+    border: 1px solid var(--line);
+}
+
+.payment-btn-app-dark:hover {
+    background: #34343d;
+}
+
+@media (max-width: 600px) {
+    .payment-card-app {
+        padding: 20px 16px !important;
+    }
+
+    .payment-title-app {
+        font-size: 28px;
+    }
+
+    .payment-text-app {
+        font-size: 16px;
+    }
+
+    .payment-phone-value-app {
+        font-size: 22px;
+    }
+}
