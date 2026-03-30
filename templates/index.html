@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Запись на тренировки</title>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='13') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='14') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <meta name="theme-color" content="#0f172a">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
@@ -146,10 +146,17 @@
                                         <button type="submit" class="register-btn">Записаться</button>
                                     </form>
                                 {% elif current_user_registration and not training_started %}
-                                    <div class="closed-box closed-box-success">
-                                        <span class="closed-box-success-icon"></span>
-                                        <span>Вы уже записаны на эту тренировку.</span>
-                                    </div>
+                                    {% if current_user_registration["status"] == "waitlist" %}
+                                        <div class="closed-box closed-box-waitlist">
+                                            <span class="closed-box-waitlist-icon"></span>
+                                            <span>Ты попал в очередь. Если места в основном составе появятся, мы запишем тебя и пришлём уведомление.</span>
+                                        </div>
+                                    {% else %}
+                                        <div class="closed-box closed-box-success">
+                                            <span class="closed-box-success-icon"></span>
+                                            <span>Вы уже записаны на эту тренировку.</span>
+                                        </div>
+                                    {% endif %}
                                 {% elif registration_status == "not_started" %}
                                     <div class="closed-box">
                                         Запись ещё не началась.

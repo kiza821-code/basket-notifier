@@ -1516,6 +1516,8 @@ body {
     color: #63f092 !important;
 }
 
+
+
 .closed-box-success-icon {
     width: 22px;
     height: 22px;
@@ -1549,6 +1551,51 @@ body {
     background: #63f092;
     transform: rotate(-45deg);
     border-radius: 2px;
+}
+
+.closed-box-waitlist {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: rgba(255, 159, 10, 0.10) !important;
+    border: 1px solid rgba(255, 177, 74, 0.28) !important;
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 177, 74, 0.05),
+        0 0 16px rgba(255, 159, 10, 0.10) !important;
+    color: #ffb14a !important;
+}
+
+.closed-box-waitlist-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(255, 177, 74, 0.16);
+    border: 1px solid rgba(255, 177, 74, 0.34);
+    position: relative;
+    flex-shrink: 0;
+    box-shadow: 0 0 12px rgba(255, 177, 74, 0.14);
+}
+
+.closed-box-waitlist-icon::before {
+    content: "";
+    position: absolute;
+    left: 10px;
+    top: 5px;
+    width: 2px;
+    height: 8px;
+    background: #ffb14a;
+    border-radius: 2px;
+}
+
+.closed-box-waitlist-icon::after {
+    content: "";
+    position: absolute;
+    left: 10px;
+    bottom: 4px;
+    width: 2px;
+    height: 2px;
+    background: #ffb14a;
+    border-radius: 50%;
 }
 
 .payment-cta-btn {
