@@ -48,6 +48,14 @@ PAYMENT_LINK_TUESDAY = os.environ.get("PAYMENT_LINK_TUESDAY", "")
 PAYMENT_LINK_THURSDAY = os.environ.get("PAYMENT_LINK_THURSDAY", "")
 PAYMENT_LINK_FRIDAY = os.environ.get("PAYMENT_LINK_FRIDAY", "")
 
+PAYMENT_PHONE_TUESDAY = os.environ.get("PAYMENT_PHONE_TUESDAY", "89138462207")
+PAYMENT_PHONE_THURSDAY = os.environ.get("PAYMENT_PHONE_THURSDAY", "89627830203")
+
+
+PAYMENT_QR_TUESDAY = "qr_tuesday.png"
+PAYMENT_QR_THURSDAY = "qr_thursday.png"
+
+
 BASE_URL = os.environ.get("BASE_URL", "https://basketapp.ru")
 
 def now_local():
@@ -475,6 +483,18 @@ def get_payment_page_url(training):
 
     return "/"
 
+def get_payment_phone(training):
+    training_dt = get_training_datetime(training)
+    weekday = training_dt.weekday()  # Monday=0, Tuesday=1, Thursday=3, Friday=4
+
+    if weekday == 1:
+        return PAYMENT_PHONE_TUESDAY
+
+    if weekday == 3:
+        return PAYMENT_PHONE_THURSDAY
+
+    return ""
+
 def get_payment_reminder_text(training):
     training_dt = get_training_datetime(training)
     weekday = training_dt.weekday()  # Monday=0, Tuesday=1, Thursday=3
@@ -891,8 +911,10 @@ def payment_tuesday():
     return render_template(
         "payment_page.html",
         payment_title="Оплата тренировки во вторник",
-        payment_text="Оплатите 200 ₽ по ссылке.",
+        payment_text="200 ₽ на Сбер",
         payment_link=PAYMENT_LINK_TUESDAY,
+        payment_phone=PAYMENT_PHONE_TUESDAY,
+        payment_qr=PAYMENT_QR_TUESDAY,
         payment_day_key="tuesday"
     )
 
@@ -903,8 +925,10 @@ def payment_thursday():
     return render_template(
         "payment_page.html",
         payment_title="Оплата тренировки в четверг",
-        payment_text="200 ₽ на Сбер.\n89138462207",
+        payment_text="200 ₽ на Сбер",
         payment_link=PAYMENT_LINK_THURSDAY,
+        payment_phone=PAYMENT_PHONE_THURSDAY,
+        payment_qr=PAYMENT_QR_THURSDAY,
         payment_day_key="thursday"
     )
 

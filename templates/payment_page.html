@@ -116,6 +116,98 @@
             width: 100%;
         }
 
+        .payment-phone-box {
+            background: #f8fbff;
+            border: 1px solid #d9e4ff;
+            border-radius: 18px;
+            padding: 18px 16px;
+            margin-bottom: 20px;
+        }
+
+        .payment-phone-label {
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #5870a3;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .payment-phone-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .payment-phone-value {
+            font-size: 22px;
+            font-weight: 800;
+            color: #0b1635;
+            word-break: break-word;
+        }
+
+        .copy-btn {
+            min-height: 44px;
+            padding: 0 16px;
+            border: none;
+            border-radius: 14px;
+            background: #e8f0ff;
+            color: #1f3561;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .copy-btn:hover {
+            opacity: 0.95;
+        }
+
+        .payment-qr-box {
+            background: #ffffff;
+            border: 1px solid #d9e4ff;
+            border-radius: 18px;
+            padding: 18px 16px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .payment-qr-label {
+            margin-bottom: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #5870a3;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .payment-qr-image {
+            width: 220px;
+            max-width: 100%;
+            height: auto;
+            border-radius: 12px;
+            background: #fff;
+            padding: 8px;
+        }
+
+        .copy-status {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #21a866;
+            min-height: 20px;
+        }
+
+        .payment-actions form {
+            width: 100%;
+        }
+
+        .payment-btn-success {
+            background: #21a866;
+            color: white;
+            width: 100%;
+        }
+
         @media (max-width: 640px) {
             .payment-card {
                 padding: 24px 18px;
@@ -134,30 +226,83 @@
 </head>
 <body>
     <div class="payment-page">
-        <div class="payment-card">
-            <div class="payment-icon">💳</div>
+    <div class="payment-card">
+        <div class="payment-icon">💳</div>
 
-            <h1 class="payment-title">{{ payment_title }}</h1>
+        <h1 class="payment-title">{{ payment_title }}</h1>
 
-            <p class="payment-text">{{ payment_text }}</p>
+        <p class="payment-text">{{ payment_text | safe }}</p>
 
+        {% if payment_phone %}
+        <div class="payment-phone-box">
+            <div class="payment-phone-label">Номер для перевода</div>
 
-            <div class="payment-actions">
-                <a href="{{ payment_link }}" class="payment-btn payment-btn-primary" target="_blank" rel="noopener noreferrer">
-                    Оплата через Сбер
-                </a>
-
-                <form method="POST" action="{{ url_for('confirm_payment', weekday_key=payment_day_key) }}">
-                    <button type="submit" class="payment-btn payment-btn-success">
-                        Оплатил
-                    </button>
-                </form>
-
-                <a href="{{ url_for('index') }}" class="payment-btn payment-btn-secondary">
-                    Назад на главную
-                </a>
+            <div class="payment-phone-row">
+                <div class="payment-phone-value" id="paymentPhone">{{ payment_phone }}</div>
+                <button type="button" class="copy-btn" onclick="copyPaymentPhone()">
+                    Скопировать номер
+                </button>
             </div>
+
+            <div class="copy-status" id="copyStatus"></div>
+        </div>
+        {% endif %}
+
+        <div class="payment-link-box">
+            <div class="payment-link-label">Ссылка для оплаты</div>
+            <div class="payment-link-value">{{ payment_link }}</div>
+        </div>
+
+        {% if payment_qr %}
+        <div class="payment-qr-box">
+            <div class="payment-qr-label">QR-код для оплаты</div>
+            <img
+                class="payment-qr-image"
+                src="{{ url_for('static', filename=payment_qr) }}"
+                alt="QR-код для оплаты"
+            >
+        </div>
+        {% endif %}
+
+        <div class="payment-actions">
+            <a href="{{ payment_link }}" class="payment-btn payment-btn-primary" target="_blank" rel="noopener noreferrer">
+                Перейти к оплате
+            </a>
+
+            <form method="POST"
+                  action="{{ url_for('confirm_payment', weekday_key=payment_day_key) }}"
+                  onsubmit="return confirm('Подтвердить, что вы оплатили тренировку?');">
+                <button type="submit" class="payment-btn payment-btn-success">
+                    Оплатил
+                </button>
+            </form>
+
+            <a href="{{ url_for('index') }}" class="payment-btn payment-btn-secondary">
+                Назад на главную
+            </a>
         </div>
     </div>
+</div>
+
+<script>
+function copyPaymentPhone() {
+    const phone = document.getElementById("paymentPhone")?.innerText || "";
+    const status = document.getElementById("copyStatus");
+
+    if (!phone) return;
+
+    navigator.clipboard.writeText(phone)
+        .then(() => {
+            if (status) {
+                status.textContent = "Номер скопирован";
+            }
+        })
+        .catch(() => {
+            if (status) {
+                status.textContent = "Не удалось скопировать номер";
+            }
+        });
+}
+</script>
 </body>
 </html>
