@@ -1641,3 +1641,135 @@ body {
         min-width: 92%;
     }
 }
+
+/* ===== PAYMENT PAGE IN APP STYLE ===== */
+
+.payment-card-app {
+    max-width: 640px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 28px 22px !important;
+}
+
+.payment-icon-app {
+    margin-bottom: 14px;
+}
+
+.payment-title-app {
+    margin: 0 0 14px;
+    font-size: 34px;
+    line-height: 1.08;
+    font-weight: 800;
+    color: var(--text-main);
+    letter-spacing: -0.03em;
+}
+
+.payment-text-app {
+    margin: 0 0 22px;
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.payment-panel {
+    background: rgba(255,255,255,0.045);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 22px;
+    padding: 18px 16px;
+    margin-bottom: 16px;
+}
+
+.payment-panel-label {
+    margin-bottom: 10px;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.payment-phone-row-app {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.payment-phone-value-app {
+    font-size: 24px;
+    line-height: 1.2;
+    font-weight: 800;
+    color: var(--text-main);
+    word-break: break-word;
+}
+
+.payment-copy-btn {
+    min-height: 44px;
+}
+
+.copy-status-app {
+    min-height: 20px;
+    margin-top: 10px;
+    font-size: 14px;
+    color: var(--success-text);
+}
+
+.payment-qr-image-app {
+    width: 220px;
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    border-radius: 16px;
+    background: #fff;
+    padding: 8px;
+}
+
+.payment-actions-app {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.payment-actions-app form {
+    width: 100%;
+}
+
+.payment-action-btn {
+    width: 100%;
+    min-height: 52px;
+    justify-content: center;
+    font-size: 16px;
+    border-radius: 18px;
+}
+
+.payment-paid-btn {
+    background: rgba(76, 217, 100, 0.14);
+    color: var(--success-text);
+    border: 1px solid rgba(76, 217, 100, 0.18);
+}
+
+.payment-paid-btn:hover {
+    background: rgba(76, 217, 100, 0.22);
+}
+
+@media (max-width: 600px) {
+    .payment-card-app {
+        padding: 20px 16px !important;
+        border-radius: 26px !important;
+    }
+
+    .payment-title-app {
+        font-size: 28px;
+    }
+
+    .payment-text-app {
+        font-size: 16px;
+    }
+
+    .payment-phone-value-app {
+        font-size: 21px;
+    }
+}
