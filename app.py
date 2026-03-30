@@ -903,7 +903,7 @@ def payment_thursday():
     return render_template(
         "payment_page.html",
         payment_title="Оплата тренировки в четверг",
-        payment_text="Оплатите 200 ₽ по ссылке.",
+        payment_text="200 ₽ на Сбер.\n89138462207\nИли оплати со Сбера по ссылке ниже.",
         payment_link=PAYMENT_LINK_THURSDAY,
         payment_day_key="thursday"
     )
@@ -914,7 +914,7 @@ def payment_friday():
     return render_template(
         "payment_page.html",
         payment_title="Оплата тренировки в пятницу",
-        payment_text="Оплатите 200 ₽ по ссылке ниже.",
+        payment_text="200 ₽ на Сбер.\n89627830203\nИли оплати со Сбера по ссылке ниже.",
         payment_link=PAYMENT_LINK_FRIDAY
     )
 
