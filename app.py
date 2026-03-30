@@ -18,6 +18,11 @@ load_dotenv()
 app.secret_key = os.environ.get("SECRET_KEY", "dev_secret_key")
 TASK_SECRET = os.environ.get("TASK_SECRET", "dev_task_secret")
 
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
+app.config["SESSION_COOKIE_SECURE"] = True
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
 APP_TZ = ZoneInfo("Asia/Novosibirsk")
 
 # Первый админ создаётся автоматически при старте, если его ещё нет
@@ -1054,7 +1059,9 @@ def login():
         if not user or not check_password_hash(user["password_hash"], password):
             return render_template("login.html", error="Неверный email или пароль")
 
+        session.permanent = True
         session["user_id"] = user["id"]
+
         return redirect(url_for("index"))
 
     return render_template("login.html", error="")
