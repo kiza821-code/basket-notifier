@@ -141,14 +141,10 @@
 
             <p class="payment-text">{{ payment_text }}</p>
 
-            <div class="payment-link-box">
-                <div class="payment-link-label">Ссылка для оплаты</div>
-                <div class="payment-link-value">{{ payment_link }}</div>
-            </div>
 
             <div class="payment-actions">
                 <a href="{{ payment_link }}" class="payment-btn payment-btn-primary" target="_blank" rel="noopener noreferrer">
-                    Оплата со Сбера
+                    Оплата через Сбер
                 </a>
 
                 <form method="POST" action="{{ url_for('confirm_payment', weekday_key=payment_day_key) }}">
