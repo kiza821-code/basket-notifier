@@ -500,6 +500,41 @@ def get_payment_phone(training):
 
     return ""
 
+def get_user_active_unpaid_training_for_weekday(user_id, weekday):
+    db = get_db()
+    cursor = db.cursor()
+
+    registrations = cursor.execute("""
+        SELECT r.*, t.title, t.training_date, t.training_time
+        FROM registrations r
+        JOIN trainings t ON t.id = r.training_id
+        WHERE r.user_id = ?
+          AND r.status = 'active'
+          AND r.is_plus_one = 0
+          AND r.is_paid = 0
+        ORDER BY t.training_date DESC, t.training_time DESC
+    """, (user_id,)).fetchall()
+
+    db.close()
+
+    now = now_local()
+
+    for row in registrations:
+        training_dt = parse_local_datetime(row["training_date"], row["training_time"])
+
+        if training_dt.weekday() != weekday:
+            continue
+
+        if now < training_dt:
+            continue
+
+        if now > training_dt + timedelta(hours=24):
+            continue
+
+        return row
+
+    return None
+
 def get_payment_reminder_text(training):
     training_dt = get_training_datetime(training)
     weekday = training_dt.weekday()  # Monday=0, Tuesday=1, Thursday=3
