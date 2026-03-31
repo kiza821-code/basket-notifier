@@ -24,6 +24,14 @@
         </form>
 
         <div class="admin-actions" style="margin-top: 16px;">
+            <form method="POST"
+                  action="{{ url_for('admin_send_payment_reminder', training_id=training['id']) }}"
+                  onsubmit="return confirm('Отправить push-напоминание об оплате всем неоплатившим участникам?');">
+                <button type="submit" class="action-btn blue-btn">
+                    Напомнить об оплате
+                </button>
+            </form>
+
             <a href="{{ url_for('admin_panel') }}" class="action-btn dark-btn">Назад в админку</a>
         </div>
     </section>

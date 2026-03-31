@@ -1980,6 +1980,73 @@ def admin_training_detail(training_id):
         waitlist_players=waitlist_players
     )
 
+@app.route("/admin/training/<int:training_id>/send-payment-reminder", methods=["POST"])
+@admin_required
+def admin_send_payment_reminder(training_id):
+    db = get_db()
+    cursor = db.cursor()
+
+    training = cursor.execute("""
+        SELECT * FROM trainings WHERE id = ?
+    """, (training_id,)).fetchone()
+
+    if not training:
+        db.close()
+        return render_message_page("Не найдено", "Тренировка не найдена.")
+
+    unpaid_players = cursor.execute("""
+        SELECT r.*, u.email
+        FROM registrations r
+        JOIN users u ON u.id = r.user_id
+        WHERE r.training_id = ?
+          AND r.status = 'active'
+          AND r.is_paid = 0
+          AND r.is_plus_one = 0
+        ORDER BY r.created_at ASC
+    """, (training_id,)).fetchall()
+
+    if not unpaid_players:
+        db.close()
+        return render_message_page(
+            "Готово",
+            "У этой тренировки нет неоплаченных участников в основном составе."
+        )
+
+    payment_page_url = get_payment_page_url(training)
+    reminder_text = get_payment_reminder_text(training)
+
+    sent_count = 0
+    error_count = 0
+
+    for player in unpaid_players:
+        try:
+            results = send_push_to_user_tokens(
+                player["user_id"],
+                "Напоминание об оплате",
+                reminder_text,
+                payment_page_url
+            )
+
+            if results:
+                has_success = any(item["status"] == "success" for item in results)
+                if has_success:
+                    sent_count += 1
+                else:
+                    error_count += 1
+            else:
+                error_count += 1
+
+        except Exception as e:
+            print("ADMIN PAYMENT REMINDER PUSH ERROR:", repr(e))
+            error_count += 1
+
+    db.close()
+
+    return render_message_page(
+        "Напоминание отправлено",
+        f"Успешно отправлено: {sent_count}. Ошибок: {error_count}."
+    )
+
 @app.route("/admin/training/<int:training_id>/update", methods=["POST"])
 @admin_required
 def admin_training_update(training_id):
