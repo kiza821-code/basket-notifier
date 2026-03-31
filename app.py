@@ -717,6 +717,75 @@ def notify_plus_one_available():
     db.commit()
     db.close()
 
+def notify_free_spot_on_training_day(training_id):
+    db = get_db()
+    cursor = db.cursor()
+
+    training = cursor.execute("""
+        SELECT * FROM trainings WHERE id = ?
+    """, (training_id,)).fetchone()
+
+    if not training:
+        db.close()
+        return
+
+    training_dt = get_training_datetime(training)
+    now = now_local()
+
+    # Только в день тренировки
+    if now.date() != training_dt.date():
+        db.close()
+        return
+
+    active_count = cursor.execute("""
+        SELECT COUNT(*) as count
+        FROM registrations
+        WHERE training_id = ? AND status = 'active'
+    """, (training_id,)).fetchone()["count"]
+
+    # Если мест уже нет — ничего не делаем
+    if active_count >= training["max_players"]:
+        db.close()
+        return
+
+    waitlist_count = cursor.execute("""
+        SELECT COUNT(*) as count
+        FROM registrations
+        WHERE training_id = ? AND status = 'waitlist'
+    """, (training_id,)).fetchone()["count"]
+
+    # Если есть очередь — никому общий push не шлём
+    if waitlist_count > 0:
+        db.close()
+        return
+
+    recipients = cursor.execute("""
+        SELECT u.*
+        FROM users u
+        WHERE u.status = 'approved'
+          AND NOT EXISTS (
+              SELECT 1
+              FROM registrations r
+              WHERE r.training_id = ?
+                AND r.user_id = u.id
+          )
+    """, (training_id,)).fetchall()
+
+    db.close()
+
+    title = "Освободилось место"
+    body = f"{training['title']} — сегодня в {training['training_time']}. Успей записаться."
+
+    for user in recipients:
+        try:
+            send_push_to_user_tokens(
+                user["id"],
+                title,
+                body,
+                "/"
+            )
+        except Exception as e:
+            print("FREE SPOT PUSH ERROR:", repr(e))
 
 init_db()
 init_firebase_admin()
@@ -1239,6 +1308,9 @@ def cancel(registration_id):
 
             active_count += 1
 
+    if removed_status == "active":
+        notify_free_spot_on_training_day(training_id)
+
     db.close()
     return redirect(url_for("index"))
 
@@ -1493,6 +1565,9 @@ def delete_user(user_id):
                     print("DELETE USER PUSH ERROR:", repr(e))
 
                 active_count += 1
+
+    if removed_status == "active":
+        notify_free_spot_on_training_day(training_id)
 
     # Удаляем push-токены пользователя
     cursor.execute("""
@@ -2179,6 +2254,9 @@ def admin_remove_registration(training_id, registration_id):
                 print("ADMIN REMOVE REG PUSH ERROR:", repr(e))
 
             active_count += 1
+
+    if removed_status == "active":
+        notify_free_spot_on_training_day(training_id)
 
     db.close()
     return redirect(url_for("admin_training_detail", training_id=training_id))
