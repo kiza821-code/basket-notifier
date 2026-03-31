@@ -743,7 +743,7 @@ def notify_free_spot_on_training_day(training_id):
         WHERE training_id = ? AND status = 'active'
     """, (training_id,)).fetchone()["count"]
 
-    # Если мест уже нет — ничего не делаем
+    # Если свободного места нет — выходим
     if active_count >= training["max_players"]:
         db.close()
         return
@@ -754,12 +754,12 @@ def notify_free_spot_on_training_day(training_id):
         WHERE training_id = ? AND status = 'waitlist'
     """, (training_id,)).fetchone()["count"]
 
-    # Если есть очередь — никому общий push не шлём
+    # Если есть очередь — общий пуш не отправляем
     if waitlist_count > 0:
         db.close()
         return
 
-    recipients = cursor.execute("""
+    free_users = cursor.execute("""
         SELECT u.*
         FROM users u
         WHERE u.status = 'approved'
@@ -771,12 +771,25 @@ def notify_free_spot_on_training_day(training_id):
           )
     """, (training_id,)).fetchall()
 
+    active_main_players = cursor.execute("""
+        SELECT r.*, u.email
+        FROM registrations r
+        JOIN users u ON u.id = r.user_id
+        WHERE r.training_id = ?
+          AND r.status = 'active'
+          AND r.is_plus_one = 0
+        ORDER BY r.created_at ASC
+    """, (training_id,)).fetchall()
+
+    plus_one_available = can_plus_one_be_added(training, active_count)
+
     db.close()
 
+    # 1) Пуш свободным пользователям
     title = "Освободилось место"
     body = f"{training['title']} — сегодня в {training['training_time']}. Успей записаться."
 
-    for user in recipients:
+    for user in free_users:
         try:
             send_push_to_user_tokens(
                 user["id"],
@@ -786,6 +799,22 @@ def notify_free_spot_on_training_day(training_id):
             )
         except Exception as e:
             print("FREE SPOT PUSH ERROR:", repr(e))
+
+    # 2) Пуш основному составу, что можно взять +1
+    if plus_one_available:
+        plus_one_title = "Можно взять +1"
+        plus_one_body = "Освободилось место. Если хочешь, можешь добавить гостя +1."
+
+        for player in active_main_players:
+            try:
+                send_push_to_user_tokens(
+                    player["user_id"],
+                    plus_one_title,
+                    plus_one_body,
+                    "/"
+                )
+            except Exception as e:
+                print("PLUS ONE FREE SPOT PUSH ERROR:", repr(e))
 
 init_db()
 init_firebase_admin()
