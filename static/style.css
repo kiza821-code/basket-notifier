@@ -2008,3 +2008,8 @@ body {
     0%,100% { opacity: 0.6; }
     50% { opacity: 1; }
 }
+
+.training-card {
+    backdrop-filter: blur(12px);
+    background: rgba(20,20,30,0.7) !important;
+}
