@@ -1990,3 +1990,12 @@ body {
         font-size: 22px;
     }
 }
+
+.hero-ball {
+    animation: floatBall 4s ease-in-out infinite;
+}
+
+@keyframes floatBall {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
