@@ -2022,3 +2022,10 @@ body {
     transform: translateY(-4px) scale(1.01);
     box-shadow: 0 30px 60px rgba(0,0,0,0.5);
 }
+
+.training-card.active {
+    border: 1px solid rgba(240,138,51,0.6);
+    box-shadow:
+        0 0 20px rgba(240,138,51,0.25),
+        0 0 60px rgba(240,138,51,0.1);
+}
