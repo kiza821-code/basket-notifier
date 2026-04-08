@@ -12,6 +12,40 @@
 
     <section class="training-card">
         <h1 style="margin-bottom: 20px;">🏀 Управление тренировкой</h1>
+        <div class="closed-box closed-box-success" style="margin-bottom: 18px;">
+            <span class="closed-box-success-icon"></span>
+            <div>
+                <div style="font-weight: 800; margin-bottom: 6px;">
+                    Расчёт оплаты: {{ payment_amount }} ₽
+                </div>
+
+                {% if main_roster_count > 0 %}
+                    <div style="line-height: 1.6;">
+                        2600 / {{ main_roster_count }} =
+                        {{ "%.2f"|format(raw_payment_amount) }} ₽
+                        → округление вверх до 10 ₽
+                        → <strong>{{ payment_amount }} ₽</strong>
+                    </div>
+                    <div style="margin-top: 6px; opacity: 0.9;">
+                        Учитываются все участники основного состава со статусом <strong>active</strong>,
+                        включая гостей +1.
+                    </div>
+                {% else %}
+                    <div style="line-height: 1.6;">
+                        В основном составе пока нет участников, расчёт недоступен.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="closed-box closed-box-success" style="margin-bottom: 18px;">
+            <span class="closed-box-success-icon"></span>
+            <span>
+                Сумма к оплате: <strong>{{ payment_amount }} ₽</strong>
+                {% if main_roster_count > 0 %}
+                    (2600 / {{ main_roster_count }} чел., округление вверх до 50 ₽)
+                {% endif %}
+            </span>
+        </div>
 
         <form method="post" action="{{ url_for('admin_training_update', training_id=training['id']) }}" class="admin-form">
             <input type="text" name="title" value="{{ training['title'] }}" required>

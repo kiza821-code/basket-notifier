@@ -11,6 +11,7 @@ import firebase_admin
 from firebase_admin import credentials, messaging
 import os
 from dotenv import load_dotenv
+import math
 
 app = Flask(__name__)
 load_dotenv()
@@ -417,6 +418,31 @@ def get_user_active_main_registration(cursor, training_id, user_id):
         LIMIT 1
     """, (training_id, user_id)).fetchone()
 
+def round_up_to_10(amount):
+    if amount <= 0:
+        return 0
+    return int(math.ceil(amount / 10.0) * 10)
+
+
+def get_main_roster_count(cursor, training_id):
+    row = cursor.execute("""
+        SELECT COUNT(*) as count
+        FROM registrations
+        WHERE training_id = ?
+          AND status = 'active'
+    """, (training_id,)).fetchone()
+
+    return row["count"] if row else 0
+
+
+def calculate_training_payment_amount(cursor, training_id):
+    main_count = get_main_roster_count(cursor, training_id)
+
+    if main_count <= 0:
+        return 0
+
+    raw_amount = 2600 / main_count
+    return round_up_to_10(raw_amount)
 
 def can_user_pay_for_training(cursor, training, user):
     if not user or user["status"] != "approved":
@@ -535,15 +561,18 @@ def get_user_active_unpaid_training_for_weekday(user_id, weekday):
 
     return None
 
-def get_payment_reminder_text(training):
+def get_payment_reminder_text(cursor, training):
     training_dt = get_training_datetime(training)
-    weekday = training_dt.weekday()  # Monday=0, Tuesday=1, Thursday=3
+    weekday = training_dt.weekday()
 
-    if weekday == 1:  # Вторник
-        return "Не забудь оплатить тренировку. 200р на номер 89138462207, Сбер"
+    amount = calculate_training_payment_amount(cursor, training["id"])
+    phone = get_payment_phone(training)
 
-    if weekday == 3:  # Четверг
-        return "Не забудь оплатить тренировку. 200р на номер 89627830203, Сбер"
+    if amount > 0 and phone:
+        return f"Не забудь оплатить тренировку. {amount} ₽ на номер {phone}, Сбер"
+
+    if amount > 0:
+        return f"Не забудь оплатить тренировку. Сумма: {amount} ₽"
 
     return "Не забудь оплатить тренировку."
 
@@ -1046,38 +1075,80 @@ def confirm_payment(weekday_key):
 @app.route("/payment/tuesday")
 @login_required
 def payment_tuesday():
+    user = get_current_user()
+    unpaid_training = get_user_active_unpaid_training_for_weekday(user["id"], 1)
+
+    amount = 0
+    if unpaid_training:
+        db = get_db()
+        cursor = db.cursor()
+        amount = calculate_training_payment_amount(cursor, unpaid_training["training_id"])
+        db.close()
+
+    payment_text = f"{amount} ₽ на Сбер" if amount > 0 else "Оплата тренировки на Сбер"
+
     return render_template(
         "payment_page.html",
         payment_title="Оплата тренировки во вторник",
-        payment_text="200 ₽ на Сбер",
+        payment_text=payment_text,
         payment_link=PAYMENT_LINK_TUESDAY,
         payment_phone=PAYMENT_PHONE_TUESDAY,
         payment_qr=PAYMENT_QR_TUESDAY,
-        payment_day_key="tuesday"
+        payment_day_key="tuesday",
+        payment_amount=amount
     )
 
 
 @app.route("/payment/thursday")
 @login_required
 def payment_thursday():
+    user = get_current_user()
+    unpaid_training = get_user_active_unpaid_training_for_weekday(user["id"], 3)
+
+    amount = 0
+    if unpaid_training:
+        db = get_db()
+        cursor = db.cursor()
+        amount = calculate_training_payment_amount(cursor, unpaid_training["training_id"])
+        db.close()
+
+    payment_text = f"{amount} ₽ на Сбер" if amount > 0 else "Оплата тренировки на Сбер"
+
     return render_template(
         "payment_page.html",
         payment_title="Оплата тренировки в четверг",
-        payment_text="200 ₽ на Сбер",
+        payment_text=payment_text,
         payment_link=PAYMENT_LINK_THURSDAY,
         payment_phone=PAYMENT_PHONE_THURSDAY,
         payment_qr=PAYMENT_QR_THURSDAY,
-        payment_day_key="thursday"
+        payment_day_key="thursday",
+        payment_amount=amount
     )
 
 @app.route("/payment/friday")
 @login_required
 def payment_friday():
+    user = get_current_user()
+    unpaid_training = get_user_active_unpaid_training_for_weekday(user["id"], 4)
+
+    amount = 0
+    if unpaid_training:
+        db = get_db()
+        cursor = db.cursor()
+        amount = calculate_training_payment_amount(cursor, unpaid_training["training_id"])
+        db.close()
+
+    payment_text = f"{amount} ₽ на Сбер" if amount > 0 else "Оплата тренировки на Сбер"
+
     return render_template(
         "payment_page.html",
         payment_title="Оплата тренировки в пятницу",
-        payment_text="200 ₽ на Сбер.\n89627830203",
-        payment_link=PAYMENT_LINK_FRIDAY
+        payment_text=payment_text,
+        payment_link=PAYMENT_LINK_FRIDAY,
+        payment_phone="",
+        payment_qr="",
+        payment_day_key="friday",
+        payment_amount=amount
     )
 
 @app.route("/tasks/check-open-notifications")
@@ -2110,13 +2181,20 @@ def admin_training_detail(training_id):
         ORDER BY r.created_at ASC
     """, (training_id,)).fetchall()
 
+    main_roster_count = get_main_roster_count(cursor, training_id)
+    raw_payment_amount = 2600 / main_roster_count if main_roster_count > 0 else 0
+    payment_amount = calculate_training_payment_amount(cursor, training_id)
+
     db.close()
 
     return render_template(
         "admin_training_detail.html",
         training=training,
         active_players=active_players,
-        waitlist_players=waitlist_players
+        waitlist_players=waitlist_players,
+        payment_amount=payment_amount,
+        main_roster_count=main_roster_count,
+        raw_payment_amount=raw_payment_amount
     )
 
 @app.route("/admin/training/<int:training_id>/send-payment-reminder", methods=["POST"])
@@ -2152,7 +2230,7 @@ def admin_send_payment_reminder(training_id):
         )
 
     payment_page_url = get_payment_page_url(training)
-    reminder_text = get_payment_reminder_text(training)
+    reminder_text = get_payment_reminder_text(cursor, training)
 
     sent_count = 0
     error_count = 0
