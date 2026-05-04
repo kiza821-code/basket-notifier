@@ -1290,7 +1290,7 @@ def index():
         firebase_project_id=FIREBASE_PROJECT_ID,
         firebase_messaging_sender_id=FIREBASE_MESSAGING_SENDER_ID,
         firebase_app_id=FIREBASE_APP_ID,
-        firebase_vapid_key=FIREBASE_VAPID_KEY
+        firebase_vapid_key=FIREBASE_VAPID_KEY,
         can_open_group_admin = can_open_group_admin
     )
 
