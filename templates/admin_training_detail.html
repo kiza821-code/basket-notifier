@@ -95,20 +95,26 @@
                         </div>
 
                         <div class="player-actions">
-                            <a href="{{ url_for('toggle_payment', registration_id=p['id']) }}"
-                               class="action-btn {% if p['is_paid'] == 1 %}dark-btn{% else %}blue-btn{% endif %}">
-                                {% if p["is_paid"] == 1 %}
-                                    Снять оплату
-                                {% else %}
-                                    Отметить оплату
-                                {% endif %}
-                            </a>
+                            <!-- Было: <a href="..."> — небезопасный GET. Теперь POST-форма -->
+                            <form method="POST"
+                                  action="{{ url_for('toggle_payment', registration_id=p['id']) }}"
+                                  style="display:inline;">
+                                <button type="submit" class="action-btn {% if p['is_paid'] == 1 %}dark-btn{% else %}blue-btn{% endif %}">
+                                    {% if p["is_paid"] == 1 %}
+                                        Снять оплату
+                                    {% else %}
+                                        Отметить оплату
+                                    {% endif %}
+                                </button>
+                            </form>
 
-                            <a href="{{ url_for('admin_remove_registration', training_id=training['id'], registration_id=p['id']) }}"
-                               class="action-btn red-btn"
-                               onclick="return confirm('Удалить участника из тренировки?');">
-                                Удалить
-                            </a>
+                            <!-- Было: <a href="..."> — небезопасный GET. Теперь POST-форма -->
+                            <form method="POST"
+                                  action="{{ url_for('admin_remove_registration', training_id=training['id'], registration_id=p['id']) }}"
+                                  style="display:inline;"
+                                  onsubmit="return confirm('Удалить участника из тренировки?');">
+                                <button type="submit" class="action-btn red-btn">Удалить</button>
+                            </form>
                         </div>
                     </li>
                 {% endfor %}
@@ -134,11 +140,13 @@
                         </div>
 
                         <div class="player-actions">
-                            <a href="{{ url_for('admin_remove_registration', training_id=training['id'], registration_id=p['id']) }}"
-                               class="action-btn red-btn"
-                               onclick="return confirm('Удалить участника из очереди?');">
-                                Удалить
-                            </a>
+                            <!-- Было: <a href="..."> — небезопасный GET. Теперь POST-форма -->
+                            <form method="POST"
+                                  action="{{ url_for('admin_remove_registration', training_id=training['id'], registration_id=p['id']) }}"
+                                  style="display:inline;"
+                                  onsubmit="return confirm('Удалить участника из очереди?');">
+                                <button type="submit" class="action-btn red-btn">Удалить</button>
+                            </form>
                         </div>
                     </li>
                 {% endfor %}

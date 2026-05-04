@@ -16,8 +16,29 @@ import math
 app = Flask(__name__)
 load_dotenv()
 
-app.secret_key = os.environ.get("SECRET_KEY", "dev_secret_key")
-TASK_SECRET = os.environ.get("TASK_SECRET", "dev_task_secret")
+# --- Проверка обязательных переменных окружения ---
+_SECRET_KEY = os.environ.get("SECRET_KEY")
+_TASK_SECRET = os.environ.get("TASK_SECRET")
+_ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL")
+_ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
+
+_missing = [
+    name for name, val in [
+        ("SECRET_KEY", _SECRET_KEY),
+        ("TASK_SECRET", _TASK_SECRET),
+        ("ADMIN_EMAIL", _ADMIN_EMAIL),
+        ("ADMIN_PASSWORD", _ADMIN_PASSWORD),
+    ]
+    if not val
+]
+if _missing:
+    raise RuntimeError(
+        f"Отсутствуют обязательные переменные окружения: {', '.join(_missing)}. "
+        f"Задайте их в файле .env или в системном окружении."
+    )
+
+app.secret_key = _SECRET_KEY
+TASK_SECRET = _TASK_SECRET
 
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
 app.config["SESSION_COOKIE_SECURE"] = True
@@ -27,8 +48,8 @@ app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 APP_TZ = ZoneInfo("Asia/Novosibirsk")
 
 # Первый админ создаётся автоматически при старте, если его ещё нет
-ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@example.com")
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "12345")
+ADMIN_EMAIL = _ADMIN_EMAIL
+ADMIN_PASSWORD = _ADMIN_PASSWORD
 
 # Mail SMTP
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.mail.ru")
@@ -76,6 +97,54 @@ def parse_local_datetime(date_str, time_str):
 def parse_local_datetime_input(datetime_str):
     dt = datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M")
     return dt.replace(tzinfo=APP_TZ)
+
+
+def validate_training_form(title, training_date, training_time, max_players_str,
+                           registration_start, registration_end):
+    """
+    Проверяет данные формы тренировки.
+    Возвращает (None, max_players_int) при успехе
+    или (сообщение_об_ошибке, None) при ошибке.
+    """
+    if not title or not training_date or not training_time or not registration_start or not registration_end:
+        return "Заполните все обязательные поля.", None
+
+    # Проверка формата даты тренировки
+    try:
+        datetime.strptime(training_date, "%Y-%m-%d")
+    except ValueError:
+        return "Некорректный формат даты тренировки (ожидается ГГГГ-ММ-ДД).", None
+
+    # Проверка формата времени тренировки
+    try:
+        datetime.strptime(training_time, "%H:%M")
+    except ValueError:
+        return "Некорректный формат времени тренировки (ожидается ЧЧ:ММ).", None
+
+    # Проверка формата datetime-local полей
+    try:
+        datetime.strptime(registration_start, "%Y-%m-%dT%H:%M")
+    except ValueError:
+        return "Некорректный формат даты начала записи.", None
+
+    try:
+        datetime.strptime(registration_end, "%Y-%m-%dT%H:%M")
+    except ValueError:
+        return "Некорректный формат даты окончания записи.", None
+
+    # Проверка числа игроков
+    try:
+        max_players = int(max_players_str)
+        if max_players < 1 or max_players > 100:
+            return "Количество игроков должно быть от 1 до 100.", None
+    except ValueError:
+        return "Количество игроков должно быть числом.", None
+
+    # Проверка порядка дат записи
+    if registration_start >= registration_end:
+        return "Время начала записи должно быть раньше времени окончания.", None
+
+    return None, max_players
 
 
 def get_db():
@@ -1153,12 +1222,18 @@ def payment_friday():
 
 @app.route("/tasks/check-open-notifications")
 def check_open_notifications():
+    key = request.args.get("key", "")
+    if key != TASK_SECRET:
+        abort(403)
     notify_open_trainings()
     return "ok", 200
 
 
 @app.route("/tasks/check-plus-one-notifications")
 def check_plus_one_notifications():
+    key = request.args.get("key", "")
+    if key != TASK_SECRET:
+        abort(403)
     notify_plus_one_available()
     return "ok", 200
 
@@ -1189,6 +1264,20 @@ def register_account():
             return render_message_page(
                 "Ошибка",
                 "Заполните все поля."
+            )
+
+        # Минимальная политика паролей
+        if len(password) < 8:
+            return render_message_page(
+                "Слабый пароль",
+                "Пароль должен содержать не менее 8 символов."
+            )
+
+        # Базовая проверка формата email
+        if "@" not in email or "." not in email.split("@")[-1]:
+            return render_message_page(
+                "Некорректный email",
+                "Введите корректный адрес электронной почты."
             )
 
         db = get_db()
@@ -1532,7 +1621,7 @@ def add_plus_one(training_id):
     return redirect(url_for("index"))
 
 
-@app.route("/admin/approve_user/<int:user_id>")
+@app.route("/admin/approve_user/<int:user_id>", methods=["POST"])
 @admin_required
 def approve_user(user_id):
     db = get_db()
@@ -1582,7 +1671,7 @@ def approve_user(user_id):
     return redirect(url_for("admin_panel"))
 
 
-@app.route("/admin/block_user/<int:user_id>")
+@app.route("/admin/block_user/<int:user_id>", methods=["POST"])
 @admin_required
 def block_user(user_id):
     db = get_db()
@@ -1599,7 +1688,7 @@ def block_user(user_id):
 
     return redirect(url_for("admin_panel"))
 
-@app.route("/admin/delete_user/<int:user_id>")
+@app.route("/admin/delete_user/<int:user_id>", methods=["POST"])
 @admin_required
 def delete_user(user_id):
     current_admin = get_current_user()
@@ -1743,23 +1832,16 @@ def create_training():
     title = request.form.get("title", "").strip()
     training_date = request.form.get("training_date", "").strip()
     training_time = request.form.get("training_time", "").strip()
-    max_players = request.form.get("max_players", "15").strip()
+    max_players_str = request.form.get("max_players", "15").strip()
     registration_start = request.form.get("registration_start", "").strip()
     registration_end = request.form.get("registration_end", "").strip()
 
-    if not title or not training_date or not training_time or not registration_start or not registration_end:
-        return redirect(url_for("admin_panel"))
-
-    try:
-        max_players = int(max_players)
-    except ValueError:
-        return render_message_page("Ошибка данных", "Количество игроков должно быть числом.")
-
-    if registration_start >= registration_end:
-        return render_message_page(
-            "Ошибка времени записи",
-            "Время начала записи должно быть раньше времени окончания записи."
-        )
+    error, max_players = validate_training_form(
+        title, training_date, training_time, max_players_str,
+        registration_start, registration_end
+    )
+    if error:
+        return render_message_page("Ошибка данных", error)
 
     db = get_db()
     cursor = db.cursor()
@@ -1792,20 +1874,16 @@ def update_training(training_id):
     title = request.form.get("title", "").strip()
     training_date = request.form.get("training_date", "").strip()
     training_time = request.form.get("training_time", "").strip()
-    max_players = request.form.get("max_players", "15").strip()
+    max_players_str = request.form.get("max_players", "15").strip()
     registration_start = request.form.get("registration_start", "").strip()
     registration_end = request.form.get("registration_end", "").strip()
 
-    try:
-        max_players = int(max_players)
-    except ValueError:
-        return render_message_page("Ошибка данных", "Количество игроков должно быть числом.")
-
-    if registration_start >= registration_end:
-        return render_message_page(
-            "Ошибка времени записи",
-            "Время начала записи должно быть раньше времени окончания записи."
-        )
+    error, max_players = validate_training_form(
+        title, training_date, training_time, max_players_str,
+        registration_start, registration_end
+    )
+    if error:
+        return render_message_page("Ошибка данных", error)
 
     db = get_db()
     cursor = db.cursor()
@@ -1854,7 +1932,7 @@ def update_training(training_id):
     return redirect(url_for("admin_panel"))
 
 
-@app.route("/admin/delete_training/<int:training_id>")
+@app.route("/admin/delete_training/<int:training_id>", methods=["POST"])
 @admin_required
 def delete_training(training_id):
     db = get_db()
@@ -1896,7 +1974,7 @@ def delete_training(training_id):
     return redirect(url_for("admin_panel"))
 
 
-@app.route("/admin/generate_schedule")
+@app.route("/admin/generate_schedule", methods=["POST"])
 @admin_required
 def generate_schedule():
     db = get_db()
@@ -1953,7 +2031,7 @@ def generate_schedule():
         f"Добавлено тренировок: {created}"
     )
 
-@app.route("/admin/toggle-payment/<int:registration_id>")
+@app.route("/admin/toggle-payment/<int:registration_id>", methods=["POST"])
 @admin_required
 def toggle_payment(registration_id):
     db = get_db()
@@ -1967,6 +2045,7 @@ def toggle_payment(registration_id):
         db.close()
         return redirect(url_for("admin_panel"))
 
+    training_id = registration["training_id"]
     new_value = 0 if registration["is_paid"] == 1 else 1
 
     cursor.execute("""
@@ -1978,9 +2057,11 @@ def toggle_payment(registration_id):
     db.commit()
     db.close()
 
-    return redirect(request.referrer or url_for("admin_panel"))
+    # Безопасный редирект: только на внутреннюю страницу тренировки
+    return redirect(url_for("admin_training_detail", training_id=training_id))
 
 @app.route("/debug/all-users")
+@admin_required
 def debug_all_users():
     db = get_db()
     cursor = db.cursor()
@@ -2053,6 +2134,7 @@ def debug_push_tokens():
 
 
 @app.route("/debug/trainings")
+@admin_required
 def debug_trainings():
     db = get_db()
     cursor = db.cursor()
@@ -2100,6 +2182,7 @@ def debug_send_test_push(user_id):
     return "<br>".join(lines)
 
 @app.route("/debug/send-test-email")
+@admin_required
 def debug_send_test_email():
     send_email(
         "ki-za@mail.ru",
@@ -2114,6 +2197,7 @@ def debug_send_test_email():
 
 
 @app.route("/debug/time")
+@admin_required
 def debug_time():
     now = now_local()
     return (
@@ -2123,6 +2207,7 @@ def debug_time():
     )
 
 @app.route("/debug/test-payment-push/tuesday/<int:user_id>")
+@admin_required
 def debug_test_payment_push_tuesday(user_id):
     try:
         send_push_to_user_tokens(
@@ -2270,14 +2355,16 @@ def admin_training_update(training_id):
     title = request.form.get("title", "").strip()
     training_date = request.form.get("training_date", "").strip()
     training_time = request.form.get("training_time", "").strip()
-    max_players = request.form.get("max_players", "15").strip()
+    max_players_str = request.form.get("max_players", "15").strip()
     registration_start = request.form.get("registration_start", "").strip()
     registration_end = request.form.get("registration_end", "").strip()
 
-    try:
-        max_players = int(max_players)
-    except ValueError:
-        return render_message_page("Ошибка", "Количество игроков должно быть числом.")
+    error, max_players = validate_training_form(
+        title, training_date, training_time, max_players_str,
+        registration_start, registration_end
+    )
+    if error:
+        return render_message_page("Ошибка данных", error)
 
     db = get_db()
     cursor = db.cursor()
@@ -2328,7 +2415,7 @@ def admin_training_update(training_id):
 
     return redirect(url_for("admin_training_detail", training_id=training_id))
 
-@app.route("/admin/training/<int:training_id>/remove-registration/<int:registration_id>")
+@app.route("/admin/training/<int:training_id>/remove-registration/<int:registration_id>", methods=["POST"])
 @admin_required
 def admin_remove_registration(training_id, registration_id):
     db = get_db()
@@ -2341,6 +2428,14 @@ def admin_remove_registration(training_id, registration_id):
     if not registration:
         db.close()
         return redirect(url_for("admin_training_detail", training_id=training_id))
+
+    # Защита от IDOR: убедиться что регистрация принадлежит именно этой тренировке
+    if registration["training_id"] != training_id:
+        db.close()
+        return render_message_page(
+            "Ошибка",
+            "Регистрация не принадлежит указанной тренировке."
+        )
 
     removed_status = registration["status"]
 

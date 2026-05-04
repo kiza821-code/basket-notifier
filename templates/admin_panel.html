@@ -29,7 +29,10 @@
             </form>
 
             <div class="admin-actions" style="margin-top: 16px;">
-                <a href="{{ url_for('generate_schedule') }}" class="action-btn blue-btn">Сгенерировать расписание</a>
+                <!-- Было: <a href="..."> — небезопасный GET. Теперь POST-форма -->
+                <form method="POST" action="{{ url_for('generate_schedule') }}" style="display:inline;">
+                    <button type="submit" class="action-btn blue-btn">Сгенерировать расписание</button>
+                </form>
             </div>
         </section>
 
@@ -49,8 +52,13 @@
                             </div>
 
                             <div class="player-actions">
-                                <a href="{{ url_for('approve_user', user_id=u['id']) }}" class="action-btn blue-btn">Одобрить</a>
-                                <a href="{{ url_for('block_user', user_id=u['id']) }}" class="action-btn red-btn">Заблокировать</a>
+                                <!-- Было: <a href="..."> — небезопасные GET. Теперь POST-формы -->
+                                <form method="POST" action="{{ url_for('approve_user', user_id=u['id']) }}" style="display:inline;">
+                                    <button type="submit" class="action-btn blue-btn">Одобрить</button>
+                                </form>
+                                <form method="POST" action="{{ url_for('block_user', user_id=u['id']) }}" style="display:inline;">
+                                    <button type="submit" class="action-btn red-btn">Заблокировать</button>
+                                </form>
                             </div>
                         </li>
                     {% endfor %}
@@ -85,11 +93,13 @@
 
                             <div class="player-actions">
                                 {% if u["is_admin"] != 1 and u["id"] != user["id"] %}
-                                    <a href="{{ url_for('delete_user', user_id=u['id']) }}"
-                                       class="action-btn red-btn"
-                                       onclick="return confirm('Удалить пользователя {{ u['display_name'] }}?');">
-                                        Удалить
-                                    </a>
+                                    <!-- Было: <a href="..."> — небезопасный GET. Теперь POST-форма -->
+                                    <form method="POST"
+                                          action="{{ url_for('delete_user', user_id=u['id']) }}"
+                                          style="display:inline;"
+                                          onsubmit="return confirm('Удалить пользователя {{ u['display_name'] }}?');">
+                                        <button type="submit" class="action-btn red-btn">Удалить</button>
+                                    </form>
                                 {% endif %}
                             </div>
                         </li>
@@ -121,7 +131,13 @@
                                 <a href="{{ url_for('admin_training_detail', training_id=t['id']) }}" class="action-btn blue-btn">
                                     Открыть
                                 </a>
-                                <a href="{{ url_for('delete_training', training_id=t['id']) }}" class="action-btn red-btn">Удалить</a>
+                                <!-- Было: <a href="..."> — небезопасный GET. Теперь POST-форма -->
+                                <form method="POST"
+                                      action="{{ url_for('delete_training', training_id=t['id']) }}"
+                                      style="display:inline;"
+                                      onsubmit="return confirm('Удалить тренировку {{ t['title'] }}?');">
+                                    <button type="submit" class="action-btn red-btn">Удалить</button>
+                                </form>
                             </div>
                         </li>
                     {% endfor %}
