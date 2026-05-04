@@ -367,7 +367,9 @@ body {
 }
 
 .login-form input:focus,
-.admin-form input:focus {
+.login-form select:focus,
+.admin-form input:focus,
+.admin-form select:focus {
     border-color: rgba(240, 138, 51, 0.45);
     box-shadow: 0 0 0 4px rgba(240, 138, 51, 0.10);
 }

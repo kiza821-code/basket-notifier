@@ -561,6 +561,19 @@ def is_group_admin(cursor, user_id, group_id):
 
     return row is not None
 
+def is_group_member(cursor, user_id, group_id):
+    if not group_id:
+        return False
+
+    row = cursor.execute("""
+        SELECT *
+        FROM group_members
+        WHERE user_id = ?
+          AND group_id = ?
+          AND status = 'approved'
+    """, (user_id, group_id)).fetchone()
+
+    return row is not None
 
 def get_admin_groups(cursor, user):
     if is_superadmin(user):
@@ -1169,10 +1182,21 @@ def index():
     db = get_db()
     cursor = db.cursor()
 
-    all_trainings = cursor.execute("""
-        SELECT * FROM trainings
-        ORDER BY training_date ASC, training_time ASC
-    """).fetchall()
+    if is_superadmin(user):
+        all_trainings = cursor.execute("""
+            SELECT *
+            FROM trainings
+            ORDER BY training_date ASC, training_time ASC
+        """).fetchall()
+    else:
+        all_trainings = cursor.execute("""
+            SELECT DISTINCT t.*
+            FROM trainings t
+            JOIN group_members gm ON gm.group_id = t.group_id
+            WHERE gm.user_id = ?
+              AND gm.status = 'approved'
+            ORDER BY t.training_date ASC, t.training_time ASC
+        """, (user["id"],)).fetchall()
 
     trainings = [
         t for t in all_trainings
@@ -1249,6 +1273,12 @@ def index():
             "training_started": training_started
         })
 
+    can_open_group_admin = False
+
+    admin_groups = get_admin_groups(cursor, user)
+    if admin_groups:
+        can_open_group_admin = True
+
     db.close()
 
     return render_template(
@@ -1261,6 +1291,7 @@ def index():
         firebase_messaging_sender_id=FIREBASE_MESSAGING_SENDER_ID,
         firebase_app_id=FIREBASE_APP_ID,
         firebase_vapid_key=FIREBASE_VAPID_KEY
+        can_open_group_admin = can_open_group_admin
     )
 
 
@@ -1643,6 +1674,13 @@ def register_training(training_id):
             "Похоже, эта тренировка была удалена."
         )
 
+    if not is_group_member(cursor, user["id"], training["group_id"]):
+        db.close()
+        return render_message_page(
+            "Нет доступа",
+            "Вы не состоите в группе этой тренировки."
+        )
+
     registration_status = get_registration_status(training)
 
     if registration_status == "not_started":
@@ -1801,6 +1839,13 @@ def add_plus_one(training_id):
         return render_message_page(
             "Тренировка не найдена",
             "Похоже, эта тренировка была удалена."
+        )
+
+    if not is_group_member(cursor, user["id"], training["group_id"]):
+        db.close()
+        return render_message_page(
+            "Нет доступа",
+            "Вы не состоите в группе этой тренировки."
         )
 
     owner_registration = cursor.execute("""
@@ -3164,6 +3209,60 @@ def superadmin_delete_group(group_id):
 
     return redirect(url_for("superadmin_panel"))
 
+@app.route("/superadmin/delete-group-force/<int:group_id>", methods=["POST"])
+@superadmin_required
+def superadmin_delete_group_force(group_id):
+    db = get_db()
+    cursor = db.cursor()
+
+    group = cursor.execute("""
+        SELECT *
+        FROM groups
+        WHERE id = ?
+    """, (group_id,)).fetchone()
+
+    if not group:
+        db.close()
+        return redirect(url_for("superadmin_panel"))
+
+    trainings = cursor.execute("""
+        SELECT id
+        FROM trainings
+        WHERE group_id = ?
+    """, (group_id,)).fetchall()
+
+    training_ids = [t["id"] for t in trainings]
+
+    for training_id in training_ids:
+        cursor.execute("""
+            DELETE FROM registrations
+            WHERE training_id = ?
+        """, (training_id,))
+
+    cursor.execute("""
+        DELETE FROM trainings
+        WHERE group_id = ?
+    """, (group_id,))
+
+    cursor.execute("""
+        DELETE FROM group_invites
+        WHERE group_id = ?
+    """, (group_id,))
+
+    cursor.execute("""
+        DELETE FROM group_members
+        WHERE group_id = ?
+    """, (group_id,))
+
+    cursor.execute("""
+        DELETE FROM groups
+        WHERE id = ?
+    """, (group_id,))
+
+    db.commit()
+    db.close()
+
+    return redirect(url_for("superadmin_panel"))
 
 if __name__ == "__main__":
     app.run(debug=True)

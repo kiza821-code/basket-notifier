@@ -76,6 +76,13 @@
                                         Удалить
                                     </button>
                                 </form>
+                                <form method="POST"
+                                      action="{{ url_for('superadmin_delete_group_force', group_id=group['id']) }}"
+                                      onsubmit="return confirm('ТОЧНО удалить группу {{ group['name'] }} вместе с участниками, заявками, приглашениями, тренировками и записями на тренировки?');">
+                                    <button type="submit" class="action-btn red-btn">
+                                        Удалить с данными
+                                    </button>
+                                </form>
                             </div>
                         </li>
                     {% endfor %}
