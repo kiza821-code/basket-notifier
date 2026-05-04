@@ -497,7 +497,8 @@ body {
     margin-top: 18px;
 }
 
-.admin-form input {
+.admin-form input,
+.admin-form select {
     flex: 1;
     min-width: 180px;
     padding: 14px 16px;

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Суперадмин</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="page">
+    <div class="container">
+
+        <section class="training-card">
+            <h1 style="margin-bottom: 20px;">🛡️ Панель суперадмина</h1>
+
+            <div class="admin-actions">
+                <a href="{{ url_for('index') }}" class="action-btn dark-btn">На главную</a>
+                <a href="{{ url_for('group_admin_panel') }}" class="action-btn blue-btn">Админка групп</a>
+                <a href="{{ url_for('logout') }}" class="action-btn red-btn">Выйти</a>
+            </div>
+        </section>
+
+        <section class="training-card">
+            <div class="card-header">
+                <h3>Создать группу</h3>
+            </div>
+
+            <form method="POST" action="{{ url_for('superadmin_create_group') }}" class="admin-form">
+                <input type="text" name="name" placeholder="Название группы" required>
+                <input type="text" name="description" placeholder="Описание группы">
+                <button type="submit">Создать</button>
+            </form>
+        </section>
+
+        <section class="training-card">
+            <div class="card-header">
+                <h3>Назначить админа группы</h3>
+            </div>
+
+            <form method="POST" action="{{ url_for('superadmin_add_group_admin') }}" class="admin-form">
+                <select name="group_id" required>
+                    <option value="">Выберите группу</option>
+                    {% for group in groups %}
+                        <option value="{{ group['id'] }}">{{ group['name'] }}</option>
+                    {% endfor %}
+                </select>
+
+                <input type="email" name="email" placeholder="Email пользователя" required>
+
+                <button type="submit">Назначить админом</button>
+            </form>
+        </section>
+
+        <section class="training-card">
+            <div class="card-header">
+                <h3>Все группы</h3>
+                <span class="badge badge-blue">{{ groups|length }}</span>
+            </div>
+
+            {% if groups %}
+                <ul class="player-list">
+                    {% for group in groups %}
+                        <li class="player-item">
+                            <div class="player-info">
+                                <span class="player-name">{{ group["name"] }}</span>
+                                <span class="player-status active-status">
+                                    {{ group["description"] or "Без описания" }}
+                                </span>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="empty-text">Групп пока нет.</p>
+            {% endif %}
+        </section>
+
+        <section class="training-card">
+            <div class="card-header">
+                <h3>Администраторы групп</h3>
+                <span class="badge badge-green">{{ group_admins|length }}</span>
+            </div>
+
+            {% if group_admins %}
+                <ul class="player-list">
+                    {% for admin in group_admins %}
+                        <li class="player-item">
+                            <div class="player-info">
+                                <span class="player-name">{{ admin["display_name"] }}</span>
+                                <span class="player-status active-status">
+                                    {{ admin["email"] }} | группа: {{ admin["group_name"] }}
+                                </span>
+                            </div>
+
+                            <div class="player-actions">
+                                <form method="POST"
+                                      action="{{ url_for('superadmin_remove_group_admin', group_member_id=admin['id']) }}"
+                                      onsubmit="return confirm('Снять права админа группы?');">
+                                    <button type="submit" class="action-btn red-btn">
+                                        Снять админа
+                                    </button>
+                                </form>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="empty-text">Администраторов групп пока нет.</p>
+            {% endif %}
+        </section>
+
+    </div>
+</div>
+
+</body>
+</html>

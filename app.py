@@ -619,6 +619,24 @@ def admin_required(func):
         return func(*args, **kwargs)
     return wrapper
 
+def superadmin_required(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        user = get_current_user()
+
+        if not user:
+            return redirect(url_for("login"))
+
+        if user["is_superadmin"] != 1:
+            return render_message_page(
+                "Нет доступа",
+                "Эта страница доступна только суперадминистратору."
+            )
+
+        return func(*args, **kwargs)
+
+    return wrapper
+
 def group_admin_or_superadmin_required(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -2905,6 +2923,192 @@ def block_group_member(group_member_id):
     db.close()
 
     return redirect(url_for("group_admin_panel"))
+
+@app.route("/superadmin")
+@superadmin_required
+def superadmin_panel():
+    db = get_db()
+    cursor = db.cursor()
+
+    groups = cursor.execute("""
+        SELECT *
+        FROM groups
+        ORDER BY name ASC
+    """).fetchall()
+
+    users = cursor.execute("""
+        SELECT id, email, display_name, status, is_admin, is_superadmin
+        FROM users
+        ORDER BY display_name ASC
+    """).fetchall()
+
+    group_admins = cursor.execute("""
+        SELECT 
+            gm.id,
+            gm.group_id,
+            gm.user_id,
+            gm.role,
+            gm.status,
+            g.name AS group_name,
+            u.display_name,
+            u.email
+        FROM group_members gm
+        JOIN groups g ON g.id = gm.group_id
+        JOIN users u ON u.id = gm.user_id
+        WHERE gm.role = 'admin'
+        ORDER BY g.name ASC, u.display_name ASC
+    """).fetchall()
+
+    db.close()
+
+    return render_template(
+        "superadmin_panel.html",
+        groups=groups,
+        users=users,
+        group_admins=group_admins
+    )
+
+@app.route("/superadmin/create-group", methods=["POST"])
+@superadmin_required
+def superadmin_create_group():
+    name = request.form.get("name", "").strip()
+    description = request.form.get("description", "").strip()
+
+    if not name:
+        return render_message_page("Ошибка", "Введите название группы.")
+
+    db = get_db()
+    cursor = db.cursor()
+
+    existing = cursor.execute("""
+        SELECT *
+        FROM groups
+        WHERE name = ?
+    """, (name,)).fetchone()
+
+    if existing:
+        db.close()
+        return render_message_page(
+            "Ошибка",
+            "Группа с таким названием уже существует."
+        )
+
+    cursor.execute("""
+        INSERT INTO groups (name, description, created_at)
+        VALUES (?, ?, ?)
+    """, (
+        name,
+        description,
+        now_local().isoformat()
+    ))
+
+    db.commit()
+    db.close()
+
+    return redirect(url_for("superadmin_panel"))
+
+@app.route("/superadmin/add-group-admin", methods=["POST"])
+@superadmin_required
+def superadmin_add_group_admin():
+    group_id = request.form.get("group_id", "").strip()
+    email = request.form.get("email", "").strip().lower()
+
+    if not group_id or not email:
+        return render_message_page(
+            "Ошибка",
+            "Выберите группу и укажите email пользователя."
+        )
+
+    db = get_db()
+    cursor = db.cursor()
+
+    group = cursor.execute("""
+        SELECT *
+        FROM groups
+        WHERE id = ?
+    """, (group_id,)).fetchone()
+
+    if not group:
+        db.close()
+        return render_message_page("Ошибка", "Группа не найдена.")
+
+    user = cursor.execute("""
+        SELECT *
+        FROM users
+        WHERE email = ?
+    """, (email,)).fetchone()
+
+    if not user:
+        db.close()
+        return render_message_page(
+            "Пользователь не найден",
+            "Сначала пользователь должен зарегистрироваться."
+        )
+
+    existing_member = cursor.execute("""
+        SELECT *
+        FROM group_members
+        WHERE group_id = ?
+          AND user_id = ?
+    """, (group_id, user["id"])).fetchone()
+
+    if existing_member:
+        cursor.execute("""
+            UPDATE group_members
+            SET role = 'admin',
+                status = 'approved'
+            WHERE id = ?
+        """, (existing_member["id"],))
+    else:
+        cursor.execute("""
+            INSERT INTO group_members (
+                group_id, user_id, role, status, created_at
+            )
+            VALUES (?, ?, 'admin', 'approved', ?)
+        """, (
+            group_id,
+            user["id"],
+            now_local().isoformat()
+        ))
+
+    cursor.execute("""
+        UPDATE users
+        SET status = 'approved',
+            is_admin = 1
+        WHERE id = ?
+    """, (user["id"],))
+
+    db.commit()
+    db.close()
+
+    return redirect(url_for("superadmin_panel"))
+
+@app.route("/superadmin/remove-group-admin/<int:group_member_id>", methods=["POST"])
+@superadmin_required
+def superadmin_remove_group_admin(group_member_id):
+    db = get_db()
+    cursor = db.cursor()
+
+    member = cursor.execute("""
+        SELECT *
+        FROM group_members
+        WHERE id = ?
+    """, (group_member_id,)).fetchone()
+
+    if not member:
+        db.close()
+        return redirect(url_for("superadmin_panel"))
+
+    cursor.execute("""
+        UPDATE group_members
+        SET role = 'member'
+        WHERE id = ?
+    """, (group_member_id,))
+
+    db.commit()
+    db.close()
+
+    return redirect(url_for("superadmin_panel"))
 
 if __name__ == "__main__":
     app.run(debug=True)

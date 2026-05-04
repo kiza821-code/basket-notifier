@@ -18,6 +18,11 @@
                 <a href="{{ url_for('group_admin_panel') }}" class="action-btn blue-btn">
                     Админка групп
                 </a>
+                {% if user["is_superadmin"] == 1 %}
+                    <a href="{{ url_for('superadmin_panel') }}" class="action-btn blue-btn">
+                        Суперадмин
+                    </a>
+                {% endif %}
                 <a href="{{ url_for('logout') }}" class="action-btn red-btn">Выйти</a>
             </div>
 
