@@ -87,6 +87,17 @@
                                         role={{ member["role"] }}
                                     </span>
                                 </div>
+
+                                <div class="player-actions">
+                                    <form method="POST"
+                                          action="{{ url_for('remove_group_member', group_member_id=member['id']) }}"
+                                          style="display:inline;"
+                                          onsubmit="return confirm('Исключить {{ member['display_name'] }} из этой группы?');">
+                                        <button type="submit" class="action-btn red-btn">
+                                            Исключить
+                                        </button>
+                                    </form>
+                                </div>
                             </li>
                         {% endfor %}
                     </ul>

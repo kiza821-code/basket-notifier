@@ -2878,6 +2878,65 @@ def group_admin_panel():
         groups_data=groups_data
     )
 
+@app.route("/group-admin/remove-member/<int:group_member_id>", methods=["POST"])
+@group_admin_or_superadmin_required
+def remove_group_member(group_member_id):
+    current_user = get_current_user()
+
+    db = get_db()
+    cursor = db.cursor()
+
+    member = cursor.execute("""
+        SELECT gm.*, u.display_name, u.email
+        FROM group_members gm
+        JOIN users u ON u.id = gm.user_id
+        WHERE gm.id = ?
+    """, (group_member_id,)).fetchone()
+
+    if not member:
+        db.close()
+        return redirect(url_for("group_admin_panel"))
+
+    if not is_superadmin(current_user) and not is_group_admin(cursor, current_user["id"], member["group_id"]):
+        db.close()
+        return render_message_page(
+            "Нет доступа",
+            "Вы не можете исключать участников из этой группы."
+        )
+
+    if member["user_id"] == current_user["id"] and not is_superadmin(current_user):
+        db.close()
+        return render_message_page(
+            "Нельзя удалить себя",
+            "Администратор группы не может исключить самого себя."
+        )
+
+    cursor.execute("""
+        DELETE FROM group_members
+        WHERE id = ?
+    """, (group_member_id,))
+
+    still_has_groups = cursor.execute("""
+        SELECT *
+        FROM group_members
+        WHERE user_id = ?
+          AND status = 'approved'
+    """, (member["user_id"],)).fetchone()
+
+    if not still_has_groups:
+        cursor.execute("""
+            UPDATE users
+            SET status = 'pending',
+                is_admin = 0
+            WHERE id = ?
+              AND is_superadmin != 1
+        """, (member["user_id"],))
+
+    db.commit()
+    db.close()
+
+    return redirect(url_for("group_admin_panel"))
+
 @app.route("/group-admin/approve-member/<int:group_member_id>", methods=["POST"])
 @group_admin_or_superadmin_required
 def approve_group_member(group_member_id):
