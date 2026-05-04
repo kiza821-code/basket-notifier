@@ -169,6 +169,16 @@ def init_db():
     )
     """)
 
+    user_columns = [
+        row[1] for row in cursor.execute("PRAGMA table_info(users)").fetchall()
+    ]
+
+    if "is_superadmin" not in user_columns:
+        cursor.execute("""
+            ALTER TABLE users
+            ADD COLUMN is_superadmin INTEGER NOT NULL DEFAULT 0
+        """)
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS trainings (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -210,7 +220,103 @@ def init_db():
     )
     """)
 
-    training_columns = [row[1] for row in cursor.execute("PRAGMA table_info(trainings)").fetchall()]
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS groups (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        created_at TEXT NOT NULL
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS group_members (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        group_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        role TEXT NOT NULL DEFAULT 'member',
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TEXT NOT NULL,
+        UNIQUE(group_id, user_id),
+        FOREIGN KEY (group_id) REFERENCES groups(id),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS group_invites (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        group_id INTEGER NOT NULL,
+        token TEXT NOT NULL UNIQUE,
+        created_by INTEGER NOT NULL,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (group_id) REFERENCES groups(id),
+        FOREIGN KEY (created_by) REFERENCES users(id)
+    )
+    """)
+
+    training_columns = [
+        row[1] for row in cursor.execute("PRAGMA table_info(trainings)").fetchall()
+    ]
+
+    if "group_id" not in training_columns:
+        cursor.execute("""
+            ALTER TABLE trainings
+            ADD COLUMN group_id INTEGER
+        """)
+
+    default_group = cursor.execute("""
+        SELECT * FROM groups
+        WHERE name = ?
+    """, ("Основная группа",)).fetchone()
+
+    if not default_group:
+        cursor.execute("""
+            INSERT INTO groups (name, description, created_at)
+            VALUES (?, ?, ?)
+        """, (
+            "Вторник, Четверг. ТГАСУ",
+            "Группа для существующих пользователей и тренировок",
+            now_local().isoformat()
+        ))
+
+        default_group_id = cursor.lastrowid
+    else:
+        default_group_id = default_group["id"]
+
+    cursor.execute("""
+        UPDATE trainings
+        SET group_id = ?
+        WHERE group_id IS NULL
+    """, (default_group_id,))
+
+    approved_users = cursor.execute("""
+        SELECT * FROM users
+        WHERE status = 'approved'
+    """).fetchall()
+
+    for old_user in approved_users:
+        exists = cursor.execute("""
+            SELECT * FROM group_members
+            WHERE group_id = ? AND user_id = ?
+        """, (default_group_id, old_user["id"])).fetchone()
+
+        if not exists:
+            role = "admin" if old_user["is_admin"] == 1 else "member"
+
+            cursor.execute("""
+                INSERT INTO group_members (
+                    group_id, user_id, role, status, created_at
+                )
+                VALUES (?, ?, ?, 'approved', ?)
+            """, (
+                default_group_id,
+                old_user["id"],
+                role,
+                now_local().isoformat()
+            ))
+
 
     if "open_notification_sent" not in training_columns:
         cursor.execute("""
@@ -254,6 +360,25 @@ def init_db():
             "Администратор",
             now_local().isoformat()
         ))
+
+    OLD_ADMIN_EMAIL = "admin@example.com"
+
+    cursor.execute("""
+        UPDATE users
+        SET is_admin = 0,
+            is_superadmin = 0
+        WHERE email = ?
+    """, (OLD_ADMIN_EMAIL,))
+
+    NEW_SUPERADMIN_EMAIL = "basketapp@mail.ru"
+
+    cursor.execute("""
+        UPDATE users
+        SET is_admin = 1,
+            is_superadmin = 1,
+            status = 'approved'
+        WHERE email = ?
+    """, (NEW_SUPERADMIN_EMAIL,))
 
     db.commit()
     db.close()
@@ -2497,6 +2622,33 @@ def admin_remove_registration(training_id, registration_id):
 
     db.close()
     return redirect(url_for("admin_training_detail", training_id=training_id))
+
+@app.route("/debug/groups")
+@admin_required
+def debug_groups():
+    db = get_db()
+    cursor = db.cursor()
+
+    rows = cursor.execute("""
+        SELECT 
+            g.id as group_id,
+            g.name as group_name,
+            u.display_name,
+            u.email,
+            gm.role,
+            gm.status
+        FROM group_members gm
+        JOIN groups g ON g.id = gm.group_id
+        JOIN users u ON u.id = gm.user_id
+        ORDER BY g.id, u.display_name
+    """).fetchall()
+
+    db.close()
+
+    return "<br>".join([
+        f"group={r['group_id']} {r['group_name']} | {r['display_name']} | {r['email']} | role={r['role']} | status={r['status']}"
+        for r in rows
+    ])
 
 if __name__ == "__main__":
     app.run(debug=True)
