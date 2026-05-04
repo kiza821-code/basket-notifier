@@ -67,6 +67,16 @@
                                     {{ group["description"] or "Без описания" }}
                                 </span>
                             </div>
+
+                            <div class="player-actions">
+                                <form method="POST"
+                                      action="{{ url_for('superadmin_delete_group', group_id=group['id']) }}"
+                                      onsubmit="return confirm('Удалить группу {{ group['name'] }}? Это действие нельзя отменить.');">
+                                    <button type="submit" class="action-btn red-btn">
+                                        Удалить
+                                    </button>
+                                </form>
+                            </div>
                         </li>
                     {% endfor %}
                 </ul>

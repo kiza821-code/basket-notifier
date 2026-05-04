@@ -3110,5 +3110,59 @@ def superadmin_remove_group_admin(group_member_id):
 
     return redirect(url_for("superadmin_panel"))
 
+@app.route("/superadmin/delete-group/<int:group_id>", methods=["POST"])
+@superadmin_required
+def superadmin_delete_group(group_id):
+    db = get_db()
+    cursor = db.cursor()
+
+    group = cursor.execute("""
+        SELECT *
+        FROM groups
+        WHERE id = ?
+    """, (group_id,)).fetchone()
+
+    if not group:
+        db.close()
+        return redirect(url_for("superadmin_panel"))
+
+    trainings_count = cursor.execute("""
+        SELECT COUNT(*) AS count
+        FROM trainings
+        WHERE group_id = ?
+    """, (group_id,)).fetchone()["count"]
+
+    members_count = cursor.execute("""
+        SELECT COUNT(*) AS count
+        FROM group_members
+        WHERE group_id = ?
+    """, (group_id,)).fetchone()["count"]
+
+    if trainings_count > 0 or members_count > 0:
+        db.close()
+        return render_message_page(
+            "Нельзя удалить группу",
+            (
+                f"В группе есть данные: участников — {members_count}, "
+                f"тренировок — {trainings_count}. "
+                f"Сначала перенесите или удалите связанные данные."
+            )
+        )
+
+    cursor.execute("""
+        DELETE FROM group_invites
+        WHERE group_id = ?
+    """, (group_id,))
+
+    cursor.execute("""
+        DELETE FROM groups
+        WHERE id = ?
+    """, (group_id,))
+
+    db.commit()
+    db.close()
+
+    return redirect(url_for("superadmin_panel"))
+
 if __name__ == "__main__":
     app.run(debug=True)
