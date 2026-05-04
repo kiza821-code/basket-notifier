@@ -545,6 +545,40 @@ def get_current_user():
     db.close()
     return user
 
+def is_superadmin(user):
+    return user and user["is_superadmin"] == 1
+
+
+def is_group_admin(cursor, user_id, group_id):
+    row = cursor.execute("""
+        SELECT *
+        FROM group_members
+        WHERE user_id = ?
+          AND group_id = ?
+          AND role = 'admin'
+          AND status = 'approved'
+    """, (user_id, group_id)).fetchone()
+
+    return row is not None
+
+
+def get_admin_groups(cursor, user):
+    if is_superadmin(user):
+        return cursor.execute("""
+            SELECT *
+            FROM groups
+            ORDER BY name ASC
+        """).fetchall()
+
+    return cursor.execute("""
+        SELECT g.*
+        FROM group_members gm
+        JOIN groups g ON g.id = gm.group_id
+        WHERE gm.user_id = ?
+          AND gm.role = 'admin'
+          AND gm.status = 'approved'
+        ORDER BY g.name ASC
+    """, (user["id"],)).fetchall()
 
 def login_required(func):
     @wraps(func)
@@ -585,6 +619,30 @@ def admin_required(func):
         return func(*args, **kwargs)
     return wrapper
 
+def group_admin_or_superadmin_required(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        user = get_current_user()
+
+        if not user:
+            return redirect(url_for("login"))
+
+        db = get_db()
+        cursor = db.cursor()
+
+        groups = get_admin_groups(cursor, user)
+
+        db.close()
+
+        if not groups:
+            return render_message_page(
+                "Нет доступа",
+                "У вас нет прав администратора группы."
+            )
+
+        return func(*args, **kwargs)
+
+    return wrapper
 
 def get_registration_status(training):
     now = now_local()
@@ -2692,6 +2750,161 @@ def debug_groups():
         f"group={r['group_id']} {r['group_name']} | {r['display_name']} | {r['email']} | role={r['role']} | status={r['status']}"
         for r in rows
     ])
+
+@app.route("/group-admin")
+@group_admin_or_superadmin_required
+def group_admin_panel():
+    user = get_current_user()
+
+    db = get_db()
+    cursor = db.cursor()
+
+    admin_groups = get_admin_groups(cursor, user)
+
+    groups_data = []
+
+    for group in admin_groups:
+        pending_members = cursor.execute("""
+            SELECT gm.*, u.display_name, u.email
+            FROM group_members gm
+            JOIN users u ON u.id = gm.user_id
+            WHERE gm.group_id = ?
+              AND gm.status = 'pending'
+            ORDER BY gm.created_at ASC
+        """, (group["id"],)).fetchall()
+
+        approved_members = cursor.execute("""
+            SELECT gm.*, u.display_name, u.email
+            FROM group_members gm
+            JOIN users u ON u.id = gm.user_id
+            WHERE gm.group_id = ?
+              AND gm.status = 'approved'
+            ORDER BY u.display_name ASC
+        """, (group["id"],)).fetchall()
+
+        trainings = cursor.execute("""
+            SELECT *
+            FROM trainings
+            WHERE group_id = ?
+            ORDER BY training_date DESC, training_time DESC
+        """, (group["id"],)).fetchall()
+
+        groups_data.append({
+            "group": group,
+            "pending_members": pending_members,
+            "approved_members": approved_members,
+            "trainings": trainings
+        })
+
+    db.close()
+
+    return render_template(
+        "group_admin_panel.html",
+        user=user,
+        groups_data=groups_data
+    )
+
+@app.route("/group-admin/approve-member/<int:group_member_id>", methods=["POST"])
+@group_admin_or_superadmin_required
+def approve_group_member(group_member_id):
+    user = get_current_user()
+
+    db = get_db()
+    cursor = db.cursor()
+
+    member = cursor.execute("""
+        SELECT gm.*, u.email, u.display_name
+        FROM group_members gm
+        JOIN users u ON u.id = gm.user_id
+        WHERE gm.id = ?
+    """, (group_member_id,)).fetchone()
+
+    if not member:
+        db.close()
+        return redirect(url_for("group_admin_panel"))
+
+    if not is_superadmin(user) and not is_group_admin(cursor, user["id"], member["group_id"]):
+        db.close()
+        return render_message_page(
+            "Нет доступа",
+            "Вы не можете одобрять заявки в этой группе."
+        )
+
+    cursor.execute("""
+        UPDATE group_members
+        SET status = 'approved'
+        WHERE id = ?
+    """, (group_member_id,))
+
+    cursor.execute("""
+        UPDATE users
+        SET status = 'approved'
+        WHERE id = ?
+    """, (member["user_id"],))
+
+    db.commit()
+    db.close()
+
+    try:
+        send_push_to_user_tokens(
+            member["user_id"],
+            "Доступ в группу одобрен",
+            "Теперь вы можете записываться на тренировки своей группы.",
+            "/"
+        )
+    except Exception as e:
+        print("APPROVE GROUP MEMBER PUSH ERROR:", repr(e))
+
+    try:
+        send_email(
+            member["email"],
+            "Заявка в группу одобрена",
+            (
+                f"Здравствуйте, {member['display_name']}!\n\n"
+                f"Ваша заявка в группу одобрена.\n"
+                f"Теперь вы можете войти на сайт и записываться на тренировки."
+            )
+        )
+    except Exception as e:
+        print("APPROVE GROUP MEMBER EMAIL ERROR:", repr(e))
+
+    return redirect(url_for("group_admin_panel"))
+
+@app.route("/group-admin/block-member/<int:group_member_id>", methods=["POST"])
+@group_admin_or_superadmin_required
+def block_group_member(group_member_id):
+    user = get_current_user()
+
+    db = get_db()
+    cursor = db.cursor()
+
+    member = cursor.execute("""
+        SELECT *
+        FROM group_members
+        WHERE id = ?
+    """, (group_member_id,)).fetchone()
+
+    if not member:
+        db.close()
+        return redirect(url_for("group_admin_panel"))
+
+    if not is_superadmin(user) and not is_group_admin(cursor, user["id"], member["group_id"]):
+        db.close()
+        return render_message_page(
+            "Нет доступа",
+            "Вы не можете отклонять заявки в этой группе."
+        )
+
+    cursor.execute("""
+        UPDATE group_members
+        SET status = 'blocked'
+        WHERE id = ?
+    """, (group_member_id,))
+
+    db.commit()
+    db.close()
+
+    return redirect(url_for("group_admin_panel"))
 
 if __name__ == "__main__":
     app.run(debug=True)

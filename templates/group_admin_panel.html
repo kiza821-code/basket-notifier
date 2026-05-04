@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админка групп</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="page">
+    <div class="container">
+
+        <section class="training-card">
+            <h1 style="margin-bottom: 20px;">👥 Админка групп</h1>
+
+            <div class="admin-actions">
+                <a href="{{ url_for('index') }}" class="action-btn dark-btn">На главную</a>
+                <a href="{{ url_for('logout') }}" class="action-btn red-btn">Выйти</a>
+            </div>
+        </section>
+
+        {% for item in groups_data %}
+            <section class="training-card">
+                <div class="card-header">
+                    <h3>{{ item.group["name"] }}</h3>
+                    <span class="badge badge-blue">
+                        {{ item.approved_members|length }} участников
+                    </span>
+                </div>
+
+                {% if item.group["description"] %}
+                    <p class="empty-text">{{ item.group["description"] }}</p>
+                {% endif %}
+            </section>
+
+            <section class="training-card">
+                <div class="card-header">
+                    <h3>Заявки в группу</h3>
+                    <span class="badge badge-orange">{{ item.pending_members|length }}</span>
+                </div>
+
+                {% if item.pending_members %}
+                    <ul class="player-list">
+                        {% for member in item.pending_members %}
+                            <li class="player-item">
+                                <div class="player-info">
+                                    <span class="player-name">{{ member["display_name"] }}</span>
+                                    <span class="player-status wait-status">{{ member["email"] }}</span>
+                                </div>
+
+                                <div class="player-actions">
+                                    <form method="POST"
+                                          action="{{ url_for('approve_group_member', group_member_id=member['id']) }}"
+                                          style="display:inline;">
+                                        <button type="submit" class="action-btn blue-btn">Одобрить</button>
+                                    </form>
+
+                                    <form method="POST"
+                                          action="{{ url_for('block_group_member', group_member_id=member['id']) }}"
+                                          style="display:inline;">
+                                        <button type="submit" class="action-btn red-btn">Отклонить</button>
+                                    </form>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="empty-text">Новых заявок нет.</p>
+                {% endif %}
+            </section>
+
+            <section class="training-card">
+                <div class="card-header">
+                    <h3>Участники группы</h3>
+                    <span class="badge badge-green">{{ item.approved_members|length }}</span>
+                </div>
+
+                {% if item.approved_members %}
+                    <ul class="player-list">
+                        {% for member in item.approved_members %}
+                            <li class="player-item">
+                                <div class="player-info">
+                                    <span class="player-name">{{ member["display_name"] }}</span>
+                                    <span class="player-status active-status">
+                                        {{ member["email"] }} |
+                                        role={{ member["role"] }}
+                                    </span>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="empty-text">Участников пока нет.</p>
+                {% endif %}
+            </section>
+
+            <section class="training-card">
+                <div class="card-header">
+                    <h3>Тренировки группы</h3>
+                    <span class="badge badge-blue">{{ item.trainings|length }}</span>
+                </div>
+
+                {% if item.trainings %}
+                    <ul class="player-list">
+                        {% for t in item.trainings %}
+                            <li class="player-item">
+                                <div class="player-info">
+                                    <span class="player-name">{{ t["title"] }}</span>
+                                    <span class="player-status active-status">
+                                        {{ t["training_date"] }} {{ t["training_time"] }}
+                                    </span>
+                                </div>
+
+                                <div class="player-actions">
+                                    <a href="{{ url_for('admin_training_detail', training_id=t['id']) }}"
+                                       class="action-btn blue-btn">
+                                        Открыть
+                                    </a>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="empty-text">Тренировок пока нет.</p>
+                {% endif %}
+            </section>
+        {% endfor %}
+
+    </div>
+</div>
+
+</body>
+</html>
