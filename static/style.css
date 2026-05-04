@@ -350,7 +350,8 @@ body {
     margin-bottom: 18px;
 }
 
-.login-form input {
+.login-form input,
+.login-form select {
     padding: 14px 16px;
     border-radius: 16px;
     border: 1px solid var(--line);

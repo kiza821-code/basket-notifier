@@ -1384,8 +1384,9 @@ def register_account():
         display_name = request.form.get("display_name", "").strip()
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "").strip()
+        group_id = request.form.get("group_id", "").strip()
 
-        if not display_name or not email or not password:
+        if not display_name or not email or not password or not group_id:
             return render_message_page(
                 "Ошибка",
                 "Заполните все поля."
@@ -1407,6 +1408,19 @@ def register_account():
 
         db = get_db()
         cursor = db.cursor()
+
+        group = cursor.execute("""
+            SELECT *
+            FROM groups
+            WHERE id = ?
+        """, (group_id,)).fetchone()
+
+        if not group:
+            db.close()
+            return render_message_page(
+                "Ошибка",
+                "Выбранная группа не найдена."
+            )
 
         existing = cursor.execute("""
             SELECT * FROM users WHERE email = ?
@@ -1431,12 +1445,30 @@ def register_account():
             now_local().isoformat()
         ))
 
+        new_user_id = cursor.lastrowid
+
+        cursor.execute("""
+            INSERT INTO group_members (
+                group_id, user_id, role, status, created_at
+            )
+            VALUES (?, ?, 'member', 'pending', ?)
+        """, (
+            group_id,
+            new_user_id,
+            now_local().isoformat()
+        ))
+
         db.commit()
 
         admins = cursor.execute("""
-            SELECT * FROM users
-            WHERE is_admin = 1 AND status = 'approved'
-        """).fetchall()
+            SELECT u.*
+            FROM group_members gm
+            JOIN users u ON u.id = gm.user_id
+            WHERE gm.group_id = ?
+              AND gm.role = 'admin'
+              AND gm.status = 'approved'
+              AND u.status = 'approved'
+        """, (group_id,)).fetchall()
 
         db.close()
 
@@ -1456,7 +1488,18 @@ def register_account():
             "Ваш аккаунт создан и ожидает одобрения администратором."
         )
 
-    return render_template("register.html")
+    db = get_db()
+    cursor = db.cursor()
+
+    groups = cursor.execute("""
+        SELECT *
+        FROM groups
+        ORDER BY name ASC
+    """).fetchall()
+
+    db.close()
+
+    return render_template("register.html", groups=groups)
 
 
 @app.route("/login", methods=["GET", "POST"])

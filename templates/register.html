@@ -18,6 +18,15 @@
                 <input type="text" name="display_name" placeholder="Ваше имя" required>
                 <input type="email" name="email" placeholder="Email" required>
                 <input type="password" name="password" placeholder="Пароль" required>
+                <select name="group_id" required>
+                    <option value="">Выберите группу</option>
+
+                    {% for group in groups %}
+                        <option value="{{ group['id'] }}">
+                            {{ group['name'] }}
+                        </option>
+                    {% endfor %}
+                </select>
                 <button type="submit">Отправить заявку</button>
             </form>
 
