@@ -2019,6 +2019,8 @@ def delete_user(user_id):
         ORDER BY created_at ASC
     """, (user_id,)).fetchall()
 
+    affected_trainings_for_notify = []
+
     for registration in registrations:
         training_id = registration["training_id"]
         removed_status = registration["status"]
@@ -2079,8 +2081,8 @@ def delete_user(user_id):
 
                 active_count += 1
 
-    if removed_status == "active":
-        notify_free_spot_on_training_day(training_id)
+        if removed_status == "active":
+            affected_trainings_for_notify.append(training_id)
 
     # Удаляем push-токены пользователя
     cursor.execute("""
@@ -2092,6 +2094,12 @@ def delete_user(user_id):
         DELETE FROM registrations WHERE user_id = ?
     """, (user_id,))
 
+    # Удаляем пользователя из групп
+    cursor.execute("""
+        DELETE FROM group_members
+        WHERE user_id = ?
+    """, (user_id,))
+
     # Удаляем самого пользователя
     cursor.execute("""
         DELETE FROM users WHERE id = ?
@@ -2099,6 +2107,9 @@ def delete_user(user_id):
 
     db.commit()
     db.close()
+
+    for training_id in affected_trainings_for_notify:
+        notify_free_spot_on_training_day(training_id)
 
     try:
         send_email(
