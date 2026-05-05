@@ -336,6 +336,28 @@ def init_db():
                 ADD COLUMN completed_notification_sent INTEGER NOT NULL DEFAULT 0
             """)
 
+    training_columns = [
+        row[1] for row in cursor.execute("PRAGMA table_info(trainings)").fetchall()
+    ]
+
+    if "payment_mode" not in training_columns:
+        cursor.execute("""
+            ALTER TABLE trainings
+            ADD COLUMN payment_mode TEXT NOT NULL DEFAULT 'split'
+        """)
+
+    if "payment_fixed_amount" not in training_columns:
+        cursor.execute("""
+            ALTER TABLE trainings
+            ADD COLUMN payment_fixed_amount INTEGER NOT NULL DEFAULT 0
+        """)
+
+    if "payment_total_amount" not in training_columns:
+        cursor.execute("""
+            ALTER TABLE trainings
+            ADD COLUMN payment_total_amount INTEGER NOT NULL DEFAULT 2600
+        """)
+
     registration_columns = [row[1] for row in cursor.execute("PRAGMA table_info(registrations)").fetchall()]
 
     if "is_paid" not in registration_columns:
@@ -719,12 +741,28 @@ def get_main_roster_count(cursor, training_id):
 
 
 def calculate_training_payment_amount(cursor, training_id):
+    training = cursor.execute("""
+        SELECT *
+        FROM trainings
+        WHERE id = ?
+    """, (training_id,)).fetchone()
+
+    if not training:
+        return 0
+
+    payment_mode = training["payment_mode"] if "payment_mode" in training.keys() else "split"
+    fixed_amount = training["payment_fixed_amount"] if "payment_fixed_amount" in training.keys() else 0
+    total_amount = training["payment_total_amount"] if "payment_total_amount" in training.keys() else 2600
+
+    if payment_mode == "fixed":
+        return int(fixed_amount or 0)
+
     main_count = get_main_roster_count(cursor, training_id)
 
     if main_count <= 0:
         return 0
 
-    raw_amount = 2600 / main_count
+    raw_amount = int(total_amount or 0) / main_count
     return round_up_to_10(raw_amount)
 
 def can_user_pay_for_training(cursor, training, user):
@@ -2567,7 +2605,10 @@ def admin_training_detail(training_id):
     """, (training_id,)).fetchall()
 
     main_roster_count = get_main_roster_count(cursor, training_id)
-    raw_payment_amount = 2600 / main_roster_count if main_roster_count > 0 else 0
+    if training["payment_mode"] == "fixed":
+        raw_payment_amount = training["payment_fixed_amount"]
+    else:
+        raw_payment_amount = training["payment_total_amount"] / main_roster_count if main_roster_count > 0 else 0
     payment_amount = calculate_training_payment_amount(cursor, training_id)
 
     db.close()
@@ -2658,6 +2699,18 @@ def admin_training_update(training_id):
     max_players_str = request.form.get("max_players", "15").strip()
     registration_start = request.form.get("registration_start", "").strip()
     registration_end = request.form.get("registration_end", "").strip()
+    payment_mode = request.form.get("payment_mode", "split").strip()
+    payment_fixed_amount_str = request.form.get("payment_fixed_amount", "0").strip()
+    payment_total_amount_str = request.form.get("payment_total_amount", "2600").strip()
+
+    if payment_mode not in ["fixed", "split"]:
+        return render_message_page("Ошибка", "Некорректный способ оплаты.")
+
+    try:
+        payment_fixed_amount = int(payment_fixed_amount_str or 0)
+        payment_total_amount = int(payment_total_amount_str or 0)
+    except ValueError:
+        return render_message_page("Ошибка", "Сумма оплаты должна быть числом.")
 
     error, max_players = validate_training_form(
         title, training_date, training_time, max_players_str,
@@ -2695,7 +2748,10 @@ def admin_training_update(training_id):
         UPDATE trainings
         SET title = ?, training_date = ?, training_time = ?, max_players = ?,
             registration_start = ?, registration_end = ?,
-            open_notification_sent = ?, plus_one_notification_sent = ?, completed_notification_sent = ?
+            open_notification_sent = ?, plus_one_notification_sent = ?, completed_notification_sent = ?,
+            payment_mode = ?,
+            payment_fixed_amount = ?,
+            payment_total_amount = ?,
         WHERE id = ?
     """, (
         title,
@@ -2704,6 +2760,9 @@ def admin_training_update(training_id):
         max_players,
         registration_start,
         registration_end,
+        payment_mode,
+        payment_fixed_amount,
+        payment_total_amount,
         new_open_notification_sent,
         new_plus_one_notification_sent,
         new_completed_notification_sent,
@@ -3024,6 +3083,24 @@ def group_admin_create_training(group_id):
     max_players_str = request.form.get("max_players", "15").strip()
     registration_start = request.form.get("registration_start", "").strip()
     registration_end = request.form.get("registration_end", "").strip()
+    payment_mode = request.form.get("payment_mode", "split").strip()
+    payment_fixed_amount_str = request.form.get("payment_fixed_amount", "0").strip()
+    payment_total_amount_str = request.form.get("payment_total_amount", "2600").strip()
+
+    if payment_mode not in ["fixed", "split"]:
+        db.close()
+        return render_message_page("Ошибка", "Некорректный способ оплаты.")
+
+    try:
+        payment_fixed_amount = int(payment_fixed_amount_str or 0)
+        payment_total_amount = int(payment_total_amount_str or 0)
+    except ValueError:
+        db.close()
+        return render_message_page("Ошибка", "Сумма оплаты должна быть числом.")
+
+    if payment_fixed_amount < 0 or payment_total_amount < 0:
+        db.close()
+        return render_message_page("Ошибка", "Сумма оплаты не может быть отрицательной.")
 
     error, max_players = validate_training_form(
         title,
@@ -3047,11 +3124,14 @@ def group_admin_create_training(group_id):
             max_players,
             registration_start,
             registration_end,
+            payment_mode,
+            payment_fixed_amount,
+            payment_total_amount,
             open_notification_sent,
             plus_one_notification_sent,
             completed_notification_sent
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0)
     """, (
         group_id,
         title,
@@ -3059,7 +3139,10 @@ def group_admin_create_training(group_id):
         training_time,
         max_players,
         registration_start,
-        registration_end
+        registration_end,
+        payment_mode,
+        payment_fixed_amount,
+        payment_total_amount
     ))
 
     db.commit()

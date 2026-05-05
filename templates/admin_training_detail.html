@@ -19,21 +19,14 @@
                     Расчёт оплаты: {{ payment_amount }} ₽
                 </div>
 
-                {% if main_roster_count > 0 %}
-                    <div style="line-height: 1.6;">
-                        2600 / {{ main_roster_count }} =
-                        {{ "%.2f"|format(raw_payment_amount) }} ₽
-                        → округление вверх до 10 ₽
-                        → <strong>{{ payment_amount }} ₽</strong>
-                    </div>
-                    <div style="margin-top: 6px; opacity: 0.9;">
-                        Учитываются все участники основного состава со статусом <strong>active</strong>,
-                        включая гостей +1.
-                    </div>
+                {% if training["payment_mode"] == "fixed" %}
+                    Фиксированная сумма:
+                    <strong>{{ payment_amount }} ₽</strong> с игрока.
                 {% else %}
-                    <div style="line-height: 1.6;">
-                        В основном составе пока нет участников, расчёт недоступен.
-                    </div>
+                    {{ training["payment_total_amount"] }} / {{ main_roster_count }} =
+                    {{ "%.2f"|format(raw_payment_amount) }} ₽
+                    → округление вверх до 10 ₽
+                    → <strong>{{ payment_amount }} ₽</strong>
                 {% endif %}
             </div>
         </div>
@@ -54,6 +47,26 @@
             <input type="number" name="max_players" value="{{ training['max_players'] }}" required>
             <input type="datetime-local" name="registration_start" value="{{ training['registration_start'] }}" required>
             <input type="datetime-local" name="registration_end" value="{{ training['registration_end'] }}" required>
+            <select name="payment_mode" required>
+                <option value="split" {% if training["payment_mode"] == "split" %}selected{% endif %}>
+                    Делить на основной состав
+                </option>
+                <option value="fixed" {% if training["payment_mode"] == "fixed" %}selected{% endif %}>
+                    Фиксированная сумма
+                </option>
+            </select>
+
+            <input type="number"
+                   name="payment_total_amount"
+                   value="{{ training['payment_total_amount'] }}"
+                   min="0"
+                   placeholder="Общая сумма зала">
+
+            <input type="number"
+                   name="payment_fixed_amount"
+                   value="{{ training['payment_fixed_amount'] }}"
+                   min="0"
+                   placeholder="Фиксированная сумма">
             <button type="submit">Сохранить изменения</button>
         </form>
 
