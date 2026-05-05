@@ -36,6 +36,31 @@
 
             <section class="training-card">
                 <div class="card-header">
+                    <h3>Создать тренировку</h3>
+                </div>
+
+                <form method="POST"
+                      action="{{ url_for('group_admin_create_training', group_id=item.group['id']) }}"
+                      class="admin-form">
+
+                    <input type="text" name="title" placeholder="Название тренировки" required>
+
+                    <input type="date" name="training_date" required>
+
+                    <input type="time" name="training_time" required>
+
+                    <input type="number" name="max_players" value="15" min="1" required>
+
+                    <input type="datetime-local" name="registration_start" required>
+
+                    <input type="datetime-local" name="registration_end" required>
+
+                    <button type="submit">Создать тренировку</button>
+                </form>
+            </section>
+
+            <section class="training-card">
+                <div class="card-header">
                     <h3>Заявки в группу</h3>
                     <span class="badge badge-orange">{{ item.pending_members|length }}</span>
                 </div>

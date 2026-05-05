@@ -3003,6 +3003,70 @@ def approve_group_member(group_member_id):
 
     return redirect(url_for("group_admin_panel"))
 
+@app.route("/group-admin/create-training/<int:group_id>", methods=["POST"])
+@group_admin_or_superadmin_required
+def group_admin_create_training(group_id):
+    current_user = get_current_user()
+
+    db = get_db()
+    cursor = db.cursor()
+
+    if not is_superadmin(current_user) and not is_group_admin(cursor, current_user["id"], group_id):
+        db.close()
+        return render_message_page(
+            "Нет доступа",
+            "Вы не можете создавать тренировки в этой группе."
+        )
+
+    title = request.form.get("title", "").strip()
+    training_date = request.form.get("training_date", "").strip()
+    training_time = request.form.get("training_time", "").strip()
+    max_players_str = request.form.get("max_players", "15").strip()
+    registration_start = request.form.get("registration_start", "").strip()
+    registration_end = request.form.get("registration_end", "").strip()
+
+    error, max_players = validate_training_form(
+        title,
+        training_date,
+        training_time,
+        max_players_str,
+        registration_start,
+        registration_end
+    )
+
+    if error:
+        db.close()
+        return render_message_page("Ошибка данных", error)
+
+    cursor.execute("""
+        INSERT INTO trainings (
+            group_id,
+            title,
+            training_date,
+            training_time,
+            max_players,
+            registration_start,
+            registration_end,
+            open_notification_sent,
+            plus_one_notification_sent,
+            completed_notification_sent
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0)
+    """, (
+        group_id,
+        title,
+        training_date,
+        training_time,
+        max_players,
+        registration_start,
+        registration_end
+    ))
+
+    db.commit()
+    db.close()
+
+    return redirect(url_for("group_admin_panel"))
+
 @app.route("/group-admin/block-member/<int:group_member_id>", methods=["POST"])
 @group_admin_or_superadmin_required
 def block_group_member(group_member_id):
