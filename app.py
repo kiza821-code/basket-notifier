@@ -2746,12 +2746,18 @@ def admin_training_update(training_id):
 
     cursor.execute("""
         UPDATE trainings
-        SET title = ?, training_date = ?, training_time = ?, max_players = ?,
-            registration_start = ?, registration_end = ?,
-            open_notification_sent = ?, plus_one_notification_sent = ?, completed_notification_sent = ?,
+        SET title = ?,
+            training_date = ?,
+            training_time = ?,
+            max_players = ?,
+            registration_start = ?,
+            registration_end = ?,
             payment_mode = ?,
             payment_fixed_amount = ?,
             payment_total_amount = ?,
+            open_notification_sent = ?,
+            plus_one_notification_sent = ?,
+            completed_notification_sent = ?
         WHERE id = ?
     """, (
         title,
