@@ -358,6 +358,12 @@ def init_db():
             ADD COLUMN payment_total_amount INTEGER NOT NULL DEFAULT 2600
         """)
 
+    if "is_public_to_all_groups" not in training_columns:
+        cursor.execute("""
+            ALTER TABLE trainings
+            ADD COLUMN is_public_to_all_groups INTEGER NOT NULL DEFAULT 0
+        """)
+
     registration_columns = [row[1] for row in cursor.execute("PRAGMA table_info(registrations)").fetchall()]
 
     if "is_paid" not in registration_columns:
@@ -1230,9 +1236,12 @@ def index():
         all_trainings = cursor.execute("""
             SELECT DISTINCT t.*
             FROM trainings t
-            JOIN group_members gm ON gm.group_id = t.group_id
-            WHERE gm.user_id = ?
-              AND gm.status = 'approved'
+            LEFT JOIN group_members gm 
+                ON gm.group_id = t.group_id
+               AND gm.user_id = ?
+               AND gm.status = 'approved'
+            WHERE gm.id IS NOT NULL
+               OR t.is_public_to_all_groups = 1
             ORDER BY t.training_date ASC, t.training_time ASC
         """, (user["id"],)).fetchall()
 
@@ -1712,7 +1721,10 @@ def register_training(training_id):
             "Похоже, эта тренировка была удалена."
         )
 
-    if not is_group_member(cursor, user["id"], training["group_id"]):
+    if (
+            training["is_public_to_all_groups"] != 1
+            and not is_group_member(cursor, user["id"], training["group_id"])
+    ):
         db.close()
         return render_message_page(
             "Нет доступа",
@@ -1879,7 +1891,10 @@ def add_plus_one(training_id):
             "Похоже, эта тренировка была удалена."
         )
 
-    if not is_group_member(cursor, user["id"], training["group_id"]):
+    if (
+            training["is_public_to_all_groups"] != 1
+            and not is_group_member(cursor, user["id"], training["group_id"])
+    ):
         db.close()
         return render_message_page(
             "Нет доступа",
@@ -2996,6 +3011,44 @@ def remove_group_member(group_member_id):
             WHERE id = ?
               AND is_superadmin != 1
         """, (member["user_id"],))
+
+    db.commit()
+    db.close()
+
+    return redirect(url_for("group_admin_panel"))
+
+@app.route("/group-admin/toggle-public-training/<int:training_id>", methods=["POST"])
+@group_admin_or_superadmin_required
+def toggle_public_training(training_id):
+    current_user = get_current_user()
+
+    db = get_db()
+    cursor = db.cursor()
+
+    training = cursor.execute("""
+        SELECT *
+        FROM trainings
+        WHERE id = ?
+    """, (training_id,)).fetchone()
+
+    if not training:
+        db.close()
+        return redirect(url_for("group_admin_panel"))
+
+    if not is_superadmin(current_user) and not is_group_admin(cursor, current_user["id"], training["group_id"]):
+        db.close()
+        return render_message_page(
+            "Нет доступа",
+            "Вы не можете публиковать тренировку этой группы."
+        )
+
+    new_value = 0 if training["is_public_to_all_groups"] == 1 else 1
+
+    cursor.execute("""
+        UPDATE trainings
+        SET is_public_to_all_groups = ?
+        WHERE id = ?
+    """, (new_value, training_id))
 
     db.commit()
     db.close()

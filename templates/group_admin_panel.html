@@ -162,6 +162,9 @@
                                     <span class="player-name">{{ t["title"] }}</span>
                                     <span class="player-status active-status">
                                         {{ t["training_date"] }} {{ t["training_time"] }}
+                                        {% if t["is_public_to_all_groups"] == 1 %}
+                                            | открыта для всех групп
+                                        {% endif %}
                                     </span>
                                 </div>
 
@@ -170,6 +173,17 @@
                                        class="action-btn blue-btn">
                                         Открыть
                                     </a>
+                                    <form method="POST"
+                                          action="{{ url_for('toggle_public_training', training_id=t['id']) }}"
+                                          style="display:inline;">
+                                        <button type="submit" class="action-btn {% if t['is_public_to_all_groups'] == 1 %}dark-btn{% else %}blue-btn{% endif %}">
+                                            {% if t["is_public_to_all_groups"] == 1 %}
+                                                Скрыть от других групп
+                                            {% else %}
+                                                Открыть для всех групп
+                                            {% endif %}
+                                        </button>
+                                    </form>
                                 </div>
                             </li>
                         {% endfor %}
