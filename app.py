@@ -12,6 +12,7 @@ from firebase_admin import credentials, messaging
 import os
 from dotenv import load_dotenv
 import math
+import secrets
 
 app = Flask(__name__)
 load_dotenv()
@@ -1559,6 +1560,7 @@ def register_account():
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "").strip()
         group_id = request.form.get("group_id", "").strip()
+        invite_token = request.form.get("invite_token", "").strip()
 
         if not display_name or not email or not password or not group_id:
             return render_message_page(
@@ -1582,6 +1584,23 @@ def register_account():
 
         db = get_db()
         cursor = db.cursor()
+
+        if invite_token:
+            invite = cursor.execute("""
+                SELECT *
+                FROM group_invites
+                WHERE token = ?
+                  AND is_active = 1
+            """, (invite_token,)).fetchone()
+
+            if not invite:
+                db.close()
+                return render_message_page(
+                    "Ошибка",
+                    "Приглашение недействительно или устарело."
+                )
+
+            group_id = str(invite["group_id"])
 
         group = cursor.execute("""
             SELECT *
@@ -1673,7 +1692,14 @@ def register_account():
 
     db.close()
 
-    return render_template("register.html", groups=groups)
+    return render_template(
+        "register.html",
+        groups=groups,
+        invite=None,
+        invited_group_id=None,
+        invited_group_name=None,
+        invite_token=None
+    )
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -2963,11 +2989,26 @@ def group_admin_panel():
             ORDER BY training_date DESC, training_time DESC
         """, (group["id"],)).fetchall()
 
+        invite = cursor.execute("""
+            SELECT *
+            FROM group_invites
+            WHERE group_id = ?
+              AND is_active = 1
+            ORDER BY created_at DESC
+            LIMIT 1
+        """, (group["id"],)).fetchone()
+
+        invite_url = None
+        if invite:
+            invite_url = f"{BASE_URL}/invite/{invite['token']}"
+
         groups_data.append({
             "group": group,
             "pending_members": pending_members,
             "approved_members": approved_members,
-            "trainings": trainings
+            "trainings": trainings,
+            "invite": invite,
+            "invite_url": invite_url
         })
 
     db.close()
@@ -3074,6 +3115,86 @@ def toggle_public_training(training_id):
     db.close()
 
     return redirect(url_for("group_admin_panel"))
+
+@app.route("/group-admin/generate-invite/<int:group_id>", methods=["POST"])
+@group_admin_or_superadmin_required
+def generate_group_invite(group_id):
+    current_user = get_current_user()
+
+    db = get_db()
+    cursor = db.cursor()
+
+    group = cursor.execute("""
+        SELECT *
+        FROM groups
+        WHERE id = ?
+    """, (group_id,)).fetchone()
+
+    if not group:
+        db.close()
+        return redirect(url_for("group_admin_panel"))
+
+    if not is_superadmin(current_user) and not is_group_admin(cursor, current_user["id"], group_id):
+        db.close()
+        return render_message_page(
+            "Нет доступа",
+            "Вы не можете создавать приглашения для этой группы."
+        )
+
+    cursor.execute("""
+        UPDATE group_invites
+        SET is_active = 0
+        WHERE group_id = ?
+    """, (group_id,))
+
+    token = secrets.token_urlsafe(32)
+
+    cursor.execute("""
+        INSERT INTO group_invites (
+            group_id, token, created_by, is_active, created_at
+        )
+        VALUES (?, ?, ?, 1, ?)
+    """, (
+        group_id,
+        token,
+        current_user["id"],
+        now_local().isoformat()
+    ))
+
+    db.commit()
+    db.close()
+
+    return redirect(url_for("group_admin_panel"))
+
+@app.route("/invite/<token>")
+def invite_register(token):
+    db = get_db()
+    cursor = db.cursor()
+
+    invite = cursor.execute("""
+        SELECT gi.*, g.name AS group_name
+        FROM group_invites gi
+        JOIN groups g ON g.id = gi.group_id
+        WHERE gi.token = ?
+          AND gi.is_active = 1
+    """, (token,)).fetchone()
+
+    db.close()
+
+    if not invite:
+        return render_message_page(
+            "Приглашение недействительно",
+            "Ссылка приглашения устарела или была отключена."
+        )
+
+    return render_template(
+        "register.html",
+        groups=[],
+        invite=invite,
+        invited_group_id=invite["group_id"],
+        invited_group_name=invite["group_name"],
+        invite_token=token
+    )
 
 @app.route("/group-admin/approve-member/<int:group_member_id>", methods=["POST"])
 @group_admin_or_superadmin_required

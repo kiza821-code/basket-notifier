@@ -36,6 +36,44 @@
 
             <section class="training-card">
                 <div class="card-header">
+                    <h3>Ссылка приглашения</h3>
+                </div>
+
+                {% if item.invite_url %}
+                    <p class="empty-text" style="word-break: break-all;">
+                        {{ item.invite_url }}
+                    </p>
+
+                    <div class="admin-actions">
+                        <button type="button"
+                                class="action-btn dark-btn"
+                                onclick="navigator.clipboard.writeText('{{ item.invite_url }}')">
+                            Скопировать ссылку
+                        </button>
+
+                        <form method="POST"
+                              action="{{ url_for('generate_group_invite', group_id=item.group['id']) }}"
+                              style="display:inline;"
+                              onsubmit="return confirm('Старая ссылка перестанет работать. Создать новую?');">
+                            <button type="submit" class="action-btn blue-btn">
+                                Пересоздать ссылку
+                            </button>
+                        </form>
+                    </div>
+                {% else %}
+                    <p class="empty-text">Ссылка приглашения ещё не создана.</p>
+
+                    <form method="POST"
+                          action="{{ url_for('generate_group_invite', group_id=item.group['id']) }}">
+                        <button type="submit" class="action-btn blue-btn">
+                            Создать ссылку
+                        </button>
+                    </form>
+                {% endif %}
+            </section>
+
+            <section class="training-card">
+                <div class="card-header">
                     <h3>Создать тренировку</h3>
                 </div>
 
