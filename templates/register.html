@@ -1,26 +1,50 @@
-<form method="POST" action="{{ url_for('register_account') }}" class="login-form">
-    <input type="text" name="display_name" placeholder="Ваше имя" required>
-    <input type="email" name="email" placeholder="Email" required>
-    <input type="password" name="password" placeholder="Пароль" required>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='13') }}">
+</head>
+<body>
 
-    {% if invite_token %}
-        <input type="hidden" name="invite_token" value="{{ invite_token }}">
-        <input type="hidden" name="group_id" value="{{ invited_group_id }}">
+<div class="page">
+    <div class="container">
+        <section class="login-card">
+            <h1>🏀 Регистрация</h1>
+            <p class="login-text">Заполните данные и отправьте заявку администратору</p>
 
-        <div class="closed-box" style="text-align:left;">
-            Вы регистрируетесь в группу:
-            <strong>{{ invited_group_name }}</strong>
-        </div>
-    {% else %}
-        <select name="group_id" required>
-            <option value="">Выберите группу</option>
-            {% for group in groups %}
-                <option value="{{ group['id'] }}">
-                    {{ group['name'] }}
-                </option>
-            {% endfor %}
-        </select>
-    {% endif %}
+            <form method="POST" action="{{ url_for('register_account') }}" class="login-form">
+                <input type="text" name="display_name" placeholder="Ваше имя" required>
+                <input type="email" name="email" placeholder="Email" required>
+                <input type="password" name="password" placeholder="Пароль" required>
 
-    <button type="submit">Отправить заявку</button>
-</form>
+                {% if invite_token %}
+                    <input type="hidden" name="invite_token" value="{{ invite_token }}">
+                    <input type="hidden" name="group_id" value="{{ invited_group_id }}">
+
+                    <div class="closed-box" style="text-align:left;">
+                        Вы регистрируетесь в группу:
+                        <strong>{{ invited_group_name }}</strong>
+                    </div>
+                {% else %}
+                    <select name="group_id" required>
+                        <option value="">Выберите группу</option>
+                        {% for group in groups %}
+                            <option value="{{ group['id'] }}">
+                                {{ group['name'] }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                {% endif %}
+
+                <button type="submit">Отправить заявку</button>
+            </form>
+
+            <a class="admin-link" href="{{ url_for('login') }}">Уже есть аккаунт? Войти</a>
+        </section>
+    </div>
+</div>
+
+</body>
+</html>
