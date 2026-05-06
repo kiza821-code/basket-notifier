@@ -888,6 +888,25 @@ def get_user_active_unpaid_training_for_weekday(user_id, weekday):
 
     return None
 
+def get_users_who_can_see_training(cursor, training):
+    if training["is_public_to_all_groups"] == 1:
+        return cursor.execute("""
+            SELECT DISTINCT u.*
+            FROM users u
+            JOIN group_members gm ON gm.user_id = u.id
+            WHERE u.status = 'approved'
+              AND gm.status = 'approved'
+        """).fetchall()
+
+    return cursor.execute("""
+        SELECT DISTINCT u.*
+        FROM users u
+        JOIN group_members gm ON gm.user_id = u.id
+        WHERE u.status = 'approved'
+          AND gm.status = 'approved'
+          AND gm.group_id = ?
+    """, (training["group_id"],)).fetchall()
+
 def get_payment_reminder_text(cursor, training):
     training_dt = get_training_datetime(training)
     weekday = training_dt.weekday()
@@ -1030,17 +1049,14 @@ def notify_open_trainings():
         ORDER BY training_date ASC, training_time ASC
     """).fetchall()
 
-    approved_users = cursor.execute("""
-        SELECT * FROM users
-        WHERE status = 'approved'
-    """).fetchall()
-
     for training in trainings:
         if get_registration_status(training) == "open":
             title = "Открыта запись на тренировку"
             body = f"{training['title']} — {training['training_date']} {training['training_time']}"
 
-            for user in approved_users:
+            visible_users = get_users_who_can_see_training(cursor, training)
+
+            for user in visible_users:
                 try:
                     send_push_to_user_tokens(
                         user["id"],
@@ -1150,17 +1166,21 @@ def notify_free_spot_on_training_day(training_id):
         db.close()
         return
 
-    free_users = cursor.execute("""
-        SELECT u.*
-        FROM users u
-        WHERE u.status = 'approved'
-          AND NOT EXISTS (
-              SELECT 1
-              FROM registrations r
-              WHERE r.training_id = ?
-                AND r.user_id = u.id
-          )
-    """, (training_id,)).fetchall()
+    visible_users = get_users_who_can_see_training(cursor, training)
+
+    free_users = []
+
+    for visible_user in visible_users:
+        already_registered = cursor.execute("""
+            SELECT 1
+            FROM registrations
+            WHERE training_id = ?
+              AND user_id = ?
+            LIMIT 1
+        """, (training_id, visible_user["id"])).fetchone()
+
+        if not already_registered:
+            free_users.append(visible_user)
 
     active_main_players = cursor.execute("""
         SELECT r.*, u.email
