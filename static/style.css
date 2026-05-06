@@ -2116,3 +2116,34 @@ button:active {
     background: #232329;
     color: var(--text-main);
 }
+
+.form-field {
+    flex: 1;
+    min-width: 180px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-field label {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text-secondary);
+    padding-left: 4px;
+}
+
+.form-field input,
+.form-field select {
+    width: 100%;
+}
+
+.admin-form .form-field-full {
+    width: 100%;
+    flex-basis: 100%;
+}
+
+@media (max-width: 600px) {
+    .form-field {
+        min-width: 100%;
+    }
+}

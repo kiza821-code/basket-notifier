@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Админка групп</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='14') }}">
 </head>
 <body>
 
@@ -81,34 +81,53 @@
                       action="{{ url_for('group_admin_create_training', group_id=item.group['id']) }}"
                       class="admin-form">
 
-                    <input type="text" name="title" placeholder="Название тренировки" required>
+                    <div class="form-field">
+                        <label>Название тренировки</label>
+                        <input type="text" name="title" placeholder="Например: ТГАСУ / Партизанская 16" required>
+                    </div>
 
-                    <input type="date" name="training_date" required>
+                    <div class="form-field">
+                        <label>Дата тренировки</label>
+                        <input type="date" name="training_date" required>
+                    </div>
 
-                    <input type="time" name="training_time" required>
+                    <div class="form-field">
+                        <label>Время тренировки</label>
+                        <input type="time" name="training_time" required>
+                    </div>
 
-                    <input type="number" name="max_players" value="15" min="1" required>
+                    <div class="form-field">
+                        <label>Максимум игроков</label>
+                        <input type="number" name="max_players" value="15" min="1" required>
+                    </div>
 
-                    <input type="datetime-local" name="registration_start" required>
+                    <div class="form-field">
+                        <label>Начало записи</label>
+                        <input type="datetime-local" name="registration_start" required>
+                    </div>
 
-                    <input type="datetime-local" name="registration_end" required>
+                    <div class="form-field">
+                        <label>Окончание записи</label>
+                        <input type="datetime-local" name="registration_end" required>
+                    </div>
 
-                    <select name="payment_mode" required>
-                        <option value="split">Делить сумму на основной состав</option>
-                        <option value="fixed">Фиксированная сумма с игрока</option>
-                    </select>
+                    <div class="form-field">
+                        <label>Способ расчёта оплаты</label>
+                        <select name="payment_mode" required>
+                            <option value="split">Делить сумму на основной состав</option>
+                            <option value="fixed">Фиксированная сумма с игрока</option>
+                        </select>
+                    </div>
 
-                    <input type="number"
-                           name="payment_total_amount"
-                           value="2600"
-                           min="0"
-                           placeholder="Общая сумма зала">
+                    <div class="form-field">
+                        <label>Общая сумма зала</label>
+                        <input type="number" name="payment_total_amount" value="2600" min="0">
+                    </div>
 
-                    <input type="number"
-                           name="payment_fixed_amount"
-                           value="0"
-                           min="0"
-                           placeholder="Фиксированная сумма с игрока">
+                    <div class="form-field">
+                        <label>Фиксированная сумма с игрока</label>
+                        <input type="number" name="payment_fixed_amount" value="0" min="0">
+                    </div>
 
                     <button type="submit">Создать тренировку</button>
                 </form>
