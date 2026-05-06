@@ -2431,7 +2431,7 @@ def generate_schedule():
     )
 
 @app.route("/admin/toggle-payment/<int:registration_id>", methods=["POST"])
-@admin_required
+@group_admin_or_superadmin_required
 def toggle_payment(registration_id):
     db = get_db()
     cursor = db.cursor()
@@ -2445,6 +2445,28 @@ def toggle_payment(registration_id):
         return redirect(url_for("admin_panel"))
 
     training_id = registration["training_id"]
+
+    training_id = registration["training_id"]
+
+    training = cursor.execute("""
+        SELECT * FROM trainings WHERE id = ?
+    """, (training_id,)).fetchone()
+
+    user = get_current_user()
+
+    if not training:
+        db.close()
+        return render_message_page("Ошибка", "Тренировка не найдена.")
+
+    if not is_superadmin(user) and not is_group_admin(cursor, user["id"], training["group_id"]):
+        db.close()
+        return render_message_page(
+            "Нет доступа",
+            "Вы не можете управлять тренировкой этой группы."
+        )
+
+    new_value = 0 if registration["is_paid"] == 1 else 1
+
     new_value = 0 if registration["is_paid"] == 1 else 1
 
     cursor.execute("""
@@ -2629,10 +2651,11 @@ def debug_payment_links():
     )
 
 @app.route("/admin/training/<int:training_id>")
-@admin_required
+@group_admin_or_superadmin_required
 def admin_training_detail(training_id):
     db = get_db()
     cursor = db.cursor()
+    user = get_current_user()
 
     training = cursor.execute("""
         SELECT * FROM trainings WHERE id = ?
@@ -2641,6 +2664,13 @@ def admin_training_detail(training_id):
     if not training:
         db.close()
         return render_message_page("Не найдено", "Тренировка не найдена.")
+
+    if not is_superadmin(user) and not is_group_admin(cursor, user["id"], training["group_id"]):
+        db.close()
+        return render_message_page(
+            "Нет доступа",
+            "Вы не можете управлять тренировкой этой группы."
+        )
 
     if is_training_expired_for_admin(training):
         db.close()
@@ -2685,7 +2715,7 @@ def admin_training_detail(training_id):
     )
 
 @app.route("/admin/training/<int:training_id>/send-payment-reminder", methods=["POST"])
-@admin_required
+@group_admin_or_superadmin_required
 def admin_send_payment_reminder(training_id):
     db = get_db()
     cursor = db.cursor()
@@ -2697,6 +2727,15 @@ def admin_send_payment_reminder(training_id):
     if not training:
         db.close()
         return render_message_page("Не найдено", "Тренировка не найдена.")
+
+    user = get_current_user()
+
+    if not is_superadmin(user) and not is_group_admin(cursor, user["id"], training["group_id"]):
+        db.close()
+        return render_message_page(
+            "Нет доступа",
+            "Вы не можете управлять тренировкой этой группы."
+        )
 
     unpaid_players = cursor.execute("""
         SELECT r.*, u.email
@@ -2752,7 +2791,7 @@ def admin_send_payment_reminder(training_id):
     )
 
 @app.route("/admin/training/<int:training_id>/update", methods=["POST"])
-@admin_required
+@group_admin_or_superadmin_required
 def admin_training_update(training_id):
     title = request.form.get("title", "").strip()
     training_date = request.form.get("training_date", "").strip()
@@ -2790,6 +2829,15 @@ def admin_training_update(training_id):
     if not old_training:
         db.close()
         return render_message_page("Ошибка", "Тренировка не найдена.")
+
+    user = get_current_user()
+
+    if not is_superadmin(user) and not is_group_admin(cursor, user["id"], old_training["group_id"]):
+        db.close()
+        return render_message_page(
+            "Нет доступа",
+            "Вы не можете управлять тренировкой этой группы."
+        )
 
     new_open_notification_sent = old_training["open_notification_sent"]
     new_plus_one_notification_sent = old_training["plus_one_notification_sent"]
@@ -2842,7 +2890,7 @@ def admin_training_update(training_id):
     return redirect(url_for("admin_training_detail", training_id=training_id))
 
 @app.route("/admin/training/<int:training_id>/remove-registration/<int:registration_id>", methods=["POST"])
-@admin_required
+@group_admin_or_superadmin_required
 def admin_remove_registration(training_id, registration_id):
     db = get_db()
     cursor = db.cursor()
@@ -2868,6 +2916,19 @@ def admin_remove_registration(training_id, registration_id):
     training = cursor.execute("""
         SELECT * FROM trainings WHERE id = ?
     """, (training_id,)).fetchone()
+
+    user = get_current_user()
+
+    if not training:
+        db.close()
+        return render_message_page("Ошибка", "Тренировка не найдена.")
+
+    if not is_superadmin(user) and not is_group_admin(cursor, user["id"], training["group_id"]):
+        db.close()
+        return render_message_page(
+            "Нет доступа",
+            "Вы не можете управлять тренировкой этой группы."
+        )
 
     if registration["is_plus_one"] == 0:
         cursor.execute("""
