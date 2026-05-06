@@ -771,7 +771,7 @@ def can_user_pay_for_training(cursor, training, user):
 
     now = now_local()
     training_dt = get_training_datetime(training)
-    payment_deadline = training_dt + timedelta(hours=24)
+    payment_deadline = training_dt + timedelta(days=6)
 
     if now < training_dt:
         return False
@@ -799,7 +799,7 @@ def is_training_visible_for_user(cursor, training, user):
 
     # После начала — ещё 24 часа показываем только тем,
     # кто был в основном составе
-    visible_until = training_dt + timedelta(hours=24)
+    visible_until = training_dt + timedelta(days=6)
 
     if now <= visible_until and user and user["status"] == "approved":
         return get_user_active_main_registration(cursor, training["id"], user["id"]) is not None
@@ -875,7 +875,7 @@ def get_user_active_unpaid_training_for_weekday(user_id, weekday):
         if now < training_dt:
             continue
 
-        if now > training_dt + timedelta(hours=24):
+        if now > training_dt + timedelta(days=6):
             continue
 
         return row
