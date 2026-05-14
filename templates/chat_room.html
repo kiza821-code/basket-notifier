@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Чат — {{ group["name"] }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='14') }}">
+</head>
+<body>
+
+<div class="page">
+    <div class="container">
+
+        <section class="training-card">
+            <h1 style="margin-bottom: 10px;">💬 {{ group["name"] }}</h1>
+            <p class="empty-text" style="padding: 0; margin-bottom: 18px;">
+                Общий чат группы
+            </p>
+
+            <div class="admin-actions">
+                <a href="{{ url_for('chat_list') }}" class="action-btn dark-btn">Все чаты</a>
+                <a href="{{ url_for('index') }}" class="action-btn dark-btn">На главную</a>
+            </div>
+        </section>
+
+        <section class="training-card chat-card">
+            {% if messages %}
+                <div class="chat-messages">
+                    {% for m in messages %}
+                        <div class="chat-message {% if m['user_id'] == user['id'] %}chat-message-own{% endif %}">
+                            <div class="chat-message-head">
+                                <strong>{{ m["display_name"] }}</strong>
+                                <span>{{ m["created_at"][11:16] }}</span>
+                            </div>
+
+                            <div class="chat-message-text">
+                                {{ m["message"] }}
+                            </div>
+
+                            {% if m["user_id"] == user["id"] or user["is_superadmin"] == 1 %}
+                                <form method="POST"
+                                      action="{{ url_for('chat_delete_message', message_id=m['id']) }}"
+                                      onsubmit="return confirm('Удалить сообщение?');">
+                                    <button type="submit" class="chat-delete-btn">Удалить</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="empty-text">Сообщений пока нет. Напишите первым.</p>
+            {% endif %}
+        </section>
+
+        <section class="training-card">
+            <form method="POST"
+                  action="{{ url_for('chat_send_message', group_id=group['id']) }}"
+                  class="chat-form">
+
+                <textarea name="message"
+                          placeholder="Напишите сообщение..."
+                          maxlength="1000"
+                          required></textarea>
+
+                <button type="submit" class="action-btn blue-btn">
+                    Отправить
+                </button>
+            </form>
+        </section>
+
+    </div>
+</div>
+
+<script>
+    window.scrollTo(0, document.body.scrollHeight);
+</script>
+
+</body>
+</html>

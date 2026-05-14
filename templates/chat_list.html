@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Чаты</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='14') }}">
+</head>
+<body>
+
+<div class="page">
+    <div class="container">
+
+        <section class="training-card">
+            <h1 style="margin-bottom: 20px;">💬 Чаты</h1>
+
+            <div class="admin-actions">
+                <a href="{{ url_for('index') }}" class="action-btn dark-btn">На главную</a>
+                <a href="{{ url_for('logout') }}" class="action-btn red-btn">Выйти</a>
+            </div>
+        </section>
+
+        <section class="training-card">
+            <div class="card-header">
+                <h3>Ваши группы</h3>
+                <span class="badge badge-blue">{{ groups_data|length }}</span>
+            </div>
+
+            {% if groups_data %}
+                <ul class="player-list">
+                    {% for item in groups_data %}
+                        <li class="player-item">
+                            <div class="player-info">
+                                <span class="player-name">{{ item.group["name"] }}</span>
+
+                                {% if item.last_message %}
+                                    <span class="player-status active-status">
+                                        {{ item.last_message["display_name"] }}:
+                                        {{ item.last_message["message"][:80] }}
+                                    </span>
+                                {% else %}
+                                    <span class="player-status wait-status">
+                                        Сообщений пока нет
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <div class="player-actions">
+                                <a href="{{ url_for('chat_room', group_id=item.group['id']) }}"
+                                   class="action-btn blue-btn">
+                                    Открыть чат
+                                </a>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="empty-text">У вас пока нет доступных групп.</p>
+            {% endif %}
+        </section>
+
+    </div>
+</div>
+
+</body>
+</html>

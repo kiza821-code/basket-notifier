@@ -270,6 +270,7 @@
         {% endif %}
 
         <div class="admin-header-links bottom-links">
+            <a class="admin-link" href="{{ url_for('chat_list') }}">Чаты</a>
             {% if user and user["is_admin"] == 1 %}
                 <a class="admin-link" href="{{ url_for('admin_panel') }}">Админка</a>
             {% endif %}

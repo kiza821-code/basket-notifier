@@ -257,6 +257,19 @@ def init_db():
     )
     """)
 
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS chat_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        group_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        message TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        is_deleted INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY (group_id) REFERENCES groups(id),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+    """)
+
     training_columns = [
         row[1] for row in cursor.execute("PRAGMA table_info(trainings)").fetchall()
     ]
@@ -618,6 +631,23 @@ def get_admin_groups(cursor, user):
         JOIN groups g ON g.id = gm.group_id
         WHERE gm.user_id = ?
           AND gm.role = 'admin'
+          AND gm.status = 'approved'
+        ORDER BY g.name ASC
+    """, (user["id"],)).fetchall()
+
+def get_user_groups(cursor, user):
+    if is_superadmin(user):
+        return cursor.execute("""
+            SELECT *
+            FROM groups
+            ORDER BY name ASC
+        """).fetchall()
+
+    return cursor.execute("""
+        SELECT g.*
+        FROM group_members gm
+        JOIN groups g ON g.id = gm.group_id
+        WHERE gm.user_id = ?
           AND gm.status = 'approved'
         ORDER BY g.name ASC
     """, (user["id"],)).fetchall()
@@ -1733,6 +1763,210 @@ def logout():
     session.clear()
     return redirect(url_for("login"))
 
+@app.route("/chat")
+@login_required
+@approved_required
+def chat_list():
+    user = get_current_user()
+
+    db = get_db()
+    cursor = db.cursor()
+
+    groups = get_user_groups(cursor, user)
+
+    groups_data = []
+
+    for group in groups:
+        last_message = cursor.execute("""
+            SELECT cm.*, u.display_name
+            FROM chat_messages cm
+            JOIN users u ON u.id = cm.user_id
+            WHERE cm.group_id = ?
+              AND cm.is_deleted = 0
+            ORDER BY cm.created_at DESC
+            LIMIT 1
+        """, (group["id"],)).fetchone()
+
+        unread_count = 0
+
+        groups_data.append({
+            "group": group,
+            "last_message": last_message,
+            "unread_count": unread_count
+        })
+
+    db.close()
+
+    return render_template(
+        "chat_list.html",
+        user=user,
+        groups_data=groups_data
+    )
+
+@app.route("/chat/<int:group_id>")
+@login_required
+@approved_required
+def chat_room(group_id):
+    user = get_current_user()
+
+    db = get_db()
+    cursor = db.cursor()
+
+    group = cursor.execute("""
+        SELECT *
+        FROM groups
+        WHERE id = ?
+    """, (group_id,)).fetchone()
+
+    if not group:
+        db.close()
+        return render_message_page("Чат не найден", "Группа не найдена.")
+
+    if not is_superadmin(user) and not is_group_member(cursor, user["id"], group_id):
+        db.close()
+        return render_message_page(
+            "Нет доступа",
+            "Вы не состоите в этой группе."
+        )
+
+    messages = cursor.execute("""
+        SELECT cm.*, u.display_name
+        FROM chat_messages cm
+        JOIN users u ON u.id = cm.user_id
+        WHERE cm.group_id = ?
+          AND cm.is_deleted = 0
+        ORDER BY cm.created_at ASC
+        LIMIT 200
+    """, (group_id,)).fetchall()
+
+    db.close()
+
+    return render_template(
+        "chat_room.html",
+        user=user,
+        group=group,
+        messages=messages
+    )
+
+@app.route("/chat/<int:group_id>/send", methods=["POST"])
+@login_required
+@approved_required
+def chat_send_message(group_id):
+    user = get_current_user()
+    message = request.form.get("message", "").strip()
+
+    if not message:
+        return redirect(url_for("chat_room", group_id=group_id))
+
+    if len(message) > 1000:
+        return render_message_page(
+            "Слишком длинное сообщение",
+            "Сообщение не должно быть длиннее 1000 символов."
+        )
+
+    db = get_db()
+    cursor = db.cursor()
+
+    group = cursor.execute("""
+        SELECT *
+        FROM groups
+        WHERE id = ?
+    """, (group_id,)).fetchone()
+
+    if not group:
+        db.close()
+        return render_message_page("Чат не найден", "Группа не найдена.")
+
+    if not is_superadmin(user) and not is_group_member(cursor, user["id"], group_id):
+        db.close()
+        return render_message_page(
+            "Нет доступа",
+            "Вы не можете писать в этот чат."
+        )
+
+    cursor.execute("""
+        INSERT INTO chat_messages (
+            group_id, user_id, message, created_at
+        )
+        VALUES (?, ?, ?, ?)
+    """, (
+        group_id,
+        user["id"],
+        message,
+        now_local().isoformat()
+    ))
+
+    db.commit()
+
+    members = cursor.execute("""
+        SELECT DISTINCT u.*
+        FROM group_members gm
+        JOIN users u ON u.id = gm.user_id
+        WHERE gm.group_id = ?
+          AND gm.status = 'approved'
+          AND u.status = 'approved'
+          AND u.id != ?
+    """, (group_id, user["id"])).fetchall()
+
+    db.close()
+
+    for member in members:
+        try:
+            send_push_to_user_tokens(
+                member["id"],
+                f"Новое сообщение: {group['name']}",
+                f"{user['display_name']}: {message[:80]}",
+                f"/chat/{group_id}"
+            )
+        except Exception as e:
+            print("CHAT PUSH ERROR:", repr(e))
+
+    return redirect(url_for("chat_room", group_id=group_id))
+
+@app.route("/chat/message/<int:message_id>/delete", methods=["POST"])
+@login_required
+@approved_required
+def chat_delete_message(message_id):
+    user = get_current_user()
+
+    db = get_db()
+    cursor = db.cursor()
+
+    message = cursor.execute("""
+        SELECT *
+        FROM chat_messages
+        WHERE id = ?
+    """, (message_id,)).fetchone()
+
+    if not message:
+        db.close()
+        return redirect(url_for("chat_list"))
+
+    group_id = message["group_id"]
+
+    can_delete = (
+        message["user_id"] == user["id"]
+        or is_superadmin(user)
+        or is_group_admin(cursor, user["id"], group_id)
+    )
+
+    if not can_delete:
+        db.close()
+        return render_message_page(
+            "Нет доступа",
+            "Вы можете удалить только своё сообщение."
+        )
+
+    cursor.execute("""
+        UPDATE chat_messages
+        SET is_deleted = 1
+        WHERE id = ?
+    """, (message_id,))
+
+    db.commit()
+    db.close()
+
+    return redirect(url_for("chat_room", group_id=group_id))
 
 @app.route("/push/save-token", methods=["POST"])
 @login_required
