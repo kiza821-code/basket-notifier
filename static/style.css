@@ -2242,3 +2242,24 @@ button:active {
         max-width: 94%;
     }
 }
+
+/* ===== CHAT SCROLL FIX ===== */
+
+.training-card.chat-card {
+    max-height: 62vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
+}
+
+.training-card.chat-card:hover {
+    transform: none !important;
+}
+
+@media (max-width: 600px) {
+    .training-card.chat-card {
+        max-height: 58vh !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
+}
