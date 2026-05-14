@@ -1999,6 +1999,27 @@ def chat_send_message(group_id):
             "Вы не можете писать в этот чат."
         )
 
+    recent_duplicate = cursor.execute("""
+        SELECT *
+        FROM chat_messages
+        WHERE group_id = ?
+          AND user_id = ?
+          AND message = ?
+          AND is_deleted = 0
+        ORDER BY created_at DESC
+        LIMIT 1
+    """, (
+        group_id,
+        user["id"],
+        message
+    )).fetchone()
+
+    if recent_duplicate:
+        last_dt = datetime.fromisoformat(recent_duplicate["created_at"])
+        if now_local() - last_dt < timedelta(seconds=5):
+            db.close()
+            return redirect(url_for("chat_room", group_id=group_id))
+
     cursor.execute("""
         INSERT INTO chat_messages (
             group_id, user_id, message, created_at

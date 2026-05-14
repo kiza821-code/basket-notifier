@@ -56,7 +56,8 @@
         <section class="training-card">
             <form method="POST"
                   action="{{ url_for('chat_send_message', group_id=group['id']) }}"
-                  class="chat-form">
+                  class="chat-form"
+                  id="chatForm">
 
                 <textarea name="message"
                           placeholder="Напишите сообщение..."
@@ -189,6 +190,24 @@
     scrollChatToBottom();
 
     setInterval(loadNewMessages, 3000);
+
+    const chatForm = document.getElementById("chatForm");
+
+    if (chatForm) {
+        chatForm.addEventListener("submit", function () {
+            const button = chatForm.querySelector("button[type='submit']");
+            const textarea = chatForm.querySelector("textarea[name='message']");
+
+            if (button) {
+                button.disabled = true;
+                button.textContent = "Отправляем...";
+            }
+
+            if (textarea) {
+                textarea.readOnly = true;
+            }
+        });
+    }
 </script>
 
 </body>
