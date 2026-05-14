@@ -23,11 +23,12 @@
             </div>
         </section>
 
-        <section class="training-card chat-card">
+        <section class="training-card chat-card" id="chatCard">
             {% if messages %}
-                <div class="chat-messages">
+                <div class="chat-messages" id="chatMessages">
                     {% for m in messages %}
-                        <div class="chat-message {% if m['user_id'] == user['id'] %}chat-message-own{% endif %}">
+                        <div class="chat-message {% if m['user_id'] == user['id'] %}chat-message-own{% endif %}"
+                             data-message-id="{{ m['id'] }}">
                             <div class="chat-message-head">
                                 <strong>{{ m["display_name"] }}</strong>
                                 <span>{{ m["created_at"][11:16] }}</span>
@@ -72,7 +73,122 @@
 </div>
 
 <script>
-    window.scrollTo(0, document.body.scrollHeight);
+    let lastMessageId = 0;
+    const currentUserId = {{ user["id"] }};
+    const groupId = {{ group["id"] }};
+
+    document.querySelectorAll(".chat-message").forEach((item) => {
+        const id = parseInt(item.dataset.messageId || "0", 10);
+        if (id > lastMessageId) {
+            lastMessageId = id;
+        }
+    });
+
+    function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function scrollChatToBottom() {
+        const chatCard = document.getElementById("chatCard");
+        if (chatCard) {
+            chatCard.scrollTop = chatCard.scrollHeight;
+        }
+    }
+
+    function renderMessage(message) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "chat-message";
+
+        if (message.is_own) {
+            wrapper.classList.add("chat-message-own");
+        }
+
+        wrapper.dataset.messageId = message.id;
+
+        const time = message.created_at ? message.created_at.substring(11, 16) : "";
+
+        let deleteForm = "";
+
+        if (message.can_delete) {
+            deleteForm = `
+                <form method="POST"
+                      action="/chat/message/${message.id}/delete"
+                      onsubmit="return confirm('Удалить сообщение?');">
+                    <button type="submit" class="chat-delete-btn">Удалить</button>
+                </form>
+            `;
+        }
+
+        wrapper.innerHTML = `
+            <div class="chat-message-head">
+                <strong>${escapeHtml(message.display_name)}</strong>
+                <span>${escapeHtml(time)}</span>
+            </div>
+
+            <div class="chat-message-text">
+                ${escapeHtml(message.message)}
+            </div>
+
+            ${deleteForm}
+        `;
+
+        return wrapper;
+    }
+
+    async function loadNewMessages() {
+        try {
+            const response = await fetch(`/chat/${groupId}/messages?after_id=${lastMessageId}`, {
+                headers: {
+                    "Accept": "application/json"
+                }
+            });
+
+            if (!response.ok) {
+                return;
+            }
+
+            const data = await response.json();
+
+            if (!data.messages || data.messages.length === 0) {
+                return;
+            }
+
+            let container = document.getElementById("chatMessages");
+
+            if (!container) {
+                const chatCard = document.getElementById("chatCard");
+                const emptyText = chatCard.querySelector(".empty-text");
+
+                if (emptyText) {
+                    emptyText.remove();
+                }
+
+                container = document.createElement("div");
+                container.className = "chat-messages";
+                container.id = "chatMessages";
+                chatCard.appendChild(container);
+            }
+
+            data.messages.forEach((message) => {
+                container.appendChild(renderMessage(message));
+
+                if (message.id > lastMessageId) {
+                    lastMessageId = message.id;
+                }
+            });
+
+            scrollChatToBottom();
+
+        } catch (error) {
+            console.log("Ошибка обновления чата:", error);
+        }
+    }
+
+    scrollChatToBottom();
+
+    setInterval(loadNewMessages, 3000);
 </script>
 
 </body>

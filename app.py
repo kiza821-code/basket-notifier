@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory, abort
+from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory, abort, jsonify
 import sqlite3
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -573,6 +573,62 @@ def send_push_to_user_tokens(user_id, title, body, url="/"):
 
     return results
 
+def send_chat_push_to_user_tokens(user_id, title, body, url="/"):
+    db = get_db()
+    cursor = db.cursor()
+
+    tokens = cursor.execute("""
+        SELECT * FROM push_subscriptions
+        WHERE user_id = ? AND is_active = 1
+    """, (user_id,)).fetchall()
+
+    db.close()
+
+    if not url.startswith("http://") and not url.startswith("https://"):
+        if not url.startswith("/"):
+            url = "/" + url
+        full_url = BASE_URL + url
+    else:
+        full_url = url
+
+    results = []
+
+    for row in tokens:
+        token = row["fcm_token"]
+
+        try:
+            message = messaging.Message(
+                webpush=messaging.WebpushConfig(
+                    headers={
+                        "Urgency": "normal"
+                    }
+                ),
+                data={
+                    "title": title,
+                    "body": body,
+                    "url": full_url
+                },
+                token=token
+            )
+
+            response = messaging.send(message)
+
+            results.append({
+                "status": "success",
+                "user_id": user_id,
+                "token_prefix": token[:25],
+                "response": response
+            })
+
+        except Exception as e:
+            results.append({
+                "status": "error",
+                "user_id": user_id,
+                "token_prefix": token[:25],
+                "error": repr(e)
+            })
+
+    return results
 
 def get_current_user():
     user_id = session.get("user_id")
@@ -1848,6 +1904,65 @@ def chat_room(group_id):
         messages=messages
     )
 
+@app.route("/chat/<int:group_id>/messages")
+@login_required
+@approved_required
+def chat_messages_api(group_id):
+    user = get_current_user()
+    after_id = request.args.get("after_id", "0")
+
+    try:
+        after_id = int(after_id)
+    except ValueError:
+        after_id = 0
+
+    db = get_db()
+    cursor = db.cursor()
+
+    group = cursor.execute("""
+        SELECT *
+        FROM groups
+        WHERE id = ?
+    """, (group_id,)).fetchone()
+
+    if not group:
+        db.close()
+        return jsonify({"error": "group_not_found"}), 404
+
+    if not is_superadmin(user) and not is_group_member(cursor, user["id"], group_id):
+        db.close()
+        return jsonify({"error": "forbidden"}), 403
+
+    messages = cursor.execute("""
+        SELECT cm.*, u.display_name
+        FROM chat_messages cm
+        JOIN users u ON u.id = cm.user_id
+        WHERE cm.group_id = ?
+          AND cm.is_deleted = 0
+          AND cm.id > ?
+        ORDER BY cm.id ASC
+        LIMIT 100
+    """, (group_id, after_id)).fetchall()
+
+    result = []
+
+    for m in messages:
+        result.append({
+            "id": m["id"],
+            "user_id": m["user_id"],
+            "display_name": m["display_name"],
+            "message": m["message"],
+            "created_at": m["created_at"],
+            "is_own": m["user_id"] == user["id"],
+            "can_delete": m["user_id"] == user["id"] or is_superadmin(user) or is_group_admin(cursor, user["id"], group_id)
+        })
+
+    db.close()
+
+    return jsonify({
+        "messages": result
+    })
+
 @app.route("/chat/<int:group_id>/send", methods=["POST"])
 @login_required
 @approved_required
@@ -1912,7 +2027,7 @@ def chat_send_message(group_id):
 
     for member in members:
         try:
-            send_push_to_user_tokens(
+            send_chat_push_to_user_tokens(
                 member["id"],
                 f"Новое сообщение: {group['name']}",
                 f"{user['display_name']}: {message[:80]}",
