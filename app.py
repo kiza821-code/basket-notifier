@@ -13,6 +13,7 @@ import os
 from dotenv import load_dotenv
 import math
 import secrets
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 load_dotenv()
@@ -85,6 +86,19 @@ PAYMENT_QR_THURSDAY = "qr_thursday.png"
 
 
 BASE_URL = os.environ.get("BASE_URL", "https://basketapp.ru")
+
+CHAT_UPLOAD_FOLDER = os.path.join("uploads", "chat")
+ALLOWED_CHAT_IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
+
+os.makedirs(CHAT_UPLOAD_FOLDER, exist_ok=True)
+
+
+def allowed_chat_image(filename):
+    if "." not in filename:
+        return False
+
+    ext = filename.rsplit(".", 1)[1].lower()
+    return ext in ALLOWED_CHAT_IMAGE_EXTENSIONS
 
 def now_local():
     return datetime.now(APP_TZ)
@@ -265,6 +279,35 @@ def init_db():
         message TEXT NOT NULL,
         created_at TEXT NOT NULL,
         is_deleted INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY (group_id) REFERENCES groups(id),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+    """)
+
+    chat_columns = [
+        row[1] for row in cursor.execute("PRAGMA table_info(chat_messages)").fetchall()
+    ]
+
+    if "image_filename" not in chat_columns:
+        cursor.execute("""
+            ALTER TABLE chat_messages
+            ADD COLUMN image_filename TEXT
+        """)
+
+    if "image_original_name" not in chat_columns:
+        cursor.execute("""
+            ALTER TABLE chat_messages
+            ADD COLUMN image_original_name TEXT
+        """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS chat_reads (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        group_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        last_read_message_id INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT NOT NULL,
+        UNIQUE(group_id, user_id),
         FOREIGN KEY (group_id) REFERENCES groups(id),
         FOREIGN KEY (user_id) REFERENCES users(id)
     )
@@ -1843,7 +1886,27 @@ def chat_list():
             LIMIT 1
         """, (group["id"],)).fetchone()
 
-        unread_count = 0
+        read_row = cursor.execute("""
+            SELECT last_read_message_id
+            FROM chat_reads
+            WHERE group_id = ?
+              AND user_id = ?
+        """, (group["id"], user["id"])).fetchone()
+
+        last_read_id = read_row["last_read_message_id"] if read_row else 0
+
+        unread_count = cursor.execute("""
+            SELECT COUNT(*) AS count
+            FROM chat_messages
+            WHERE group_id = ?
+              AND id > ?
+              AND user_id != ?
+              AND is_deleted = 0
+        """, (
+            group["id"],
+            last_read_id,
+            user["id"]
+        )).fetchone()["count"]
 
         groups_data.append({
             "group": group,
@@ -1895,13 +1958,55 @@ def chat_room(group_id):
         LIMIT 200
     """, (group_id,)).fetchall()
 
+    can_moderate_chat = is_superadmin(user) or is_group_admin(cursor, user["id"], group_id)
+
+    last_message_id = 0
+    if messages:
+        last_message_id = max(m["id"] for m in messages)
+
+    existing_read = cursor.execute("""
+        SELECT *
+        FROM chat_reads
+        WHERE group_id = ?
+          AND user_id = ?
+    """, (group_id, user["id"])).fetchone()
+
+    if existing_read:
+        cursor.execute("""
+            UPDATE chat_reads
+            SET last_read_message_id = ?,
+                updated_at = ?
+            WHERE group_id = ?
+              AND user_id = ?
+        """, (
+            last_message_id,
+            now_local().isoformat(),
+            group_id,
+            user["id"]
+        ))
+    else:
+        cursor.execute("""
+            INSERT INTO chat_reads (
+                group_id, user_id, last_read_message_id, updated_at
+            )
+            VALUES (?, ?, ?, ?)
+        """, (
+            group_id,
+            user["id"],
+            last_message_id,
+            now_local().isoformat()
+        ))
+
+    db.commit()
+
     db.close()
 
     return render_template(
         "chat_room.html",
         user=user,
         group=group,
-        messages=messages
+        messages=messages,
+        can_moderate_chat=can_moderate_chat
     )
 
 @app.route("/chat/<int:group_id>/messages")
@@ -1969,8 +2074,13 @@ def chat_messages_api(group_id):
 def chat_send_message(group_id):
     user = get_current_user()
     message = request.form.get("message", "").strip()
+    image = request.files.get("image")
+    image_filename = None
+    image_original_name = None
 
-    if not message:
+    has_image = image and image.filename
+
+    if not message and not has_image:
         return redirect(url_for("chat_room", group_id=group_id))
 
     if len(message) > 1000:
@@ -2020,15 +2130,44 @@ def chat_send_message(group_id):
             db.close()
             return redirect(url_for("chat_room", group_id=group_id))
 
+    if has_image:
+        if not allowed_chat_image(image.filename):
+            db.close()
+            return render_message_page(
+                "Неверный формат",
+                "Можно прикреплять только изображения JPG, PNG или WEBP."
+            )
+
+        image.seek(0, os.SEEK_END)
+        image_size = image.tell()
+        image.seek(0)
+
+        if image_size > 5 * 1024 * 1024:
+            db.close()
+            return render_message_page(
+                "Файл слишком большой",
+                "Размер изображения не должен превышать 5 МБ."
+            )
+
+        original_name = secure_filename(image.filename)
+        ext = original_name.rsplit(".", 1)[1].lower()
+
+        image_filename = f"{group_id}_{user['id']}_{secrets.token_hex(12)}.{ext}"
+        image_original_name = original_name
+
+        image.save(os.path.join(CHAT_UPLOAD_FOLDER, image_filename))
+
     cursor.execute("""
         INSERT INTO chat_messages (
-            group_id, user_id, message, created_at
+            group_id, user_id, message, image_filename, image_original_name, created_at
         )
-        VALUES (?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?)
     """, (
         group_id,
         user["id"],
         message,
+        image_filename,
+        image_original_name,
         now_local().isoformat()
     ))
 
@@ -2103,6 +2242,36 @@ def chat_delete_message(message_id):
     db.close()
 
     return redirect(url_for("chat_room", group_id=group_id))
+
+@app.route("/chat/photo/<path:filename>")
+@login_required
+@approved_required
+def chat_photo(filename):
+    user = get_current_user()
+
+    db = get_db()
+    cursor = db.cursor()
+
+    message = cursor.execute("""
+        SELECT *
+        FROM chat_messages
+        WHERE image_filename = ?
+          AND is_deleted = 0
+    """, (filename,)).fetchone()
+
+    if not message:
+        db.close()
+        abort(404)
+
+    group_id = message["group_id"]
+
+    if not is_superadmin(user) and not is_group_member(cursor, user["id"], group_id):
+        db.close()
+        abort(403)
+
+    db.close()
+
+    return send_from_directory(CHAT_UPLOAD_FOLDER, filename)
 
 @app.route("/push/save-token", methods=["POST"])
 @login_required

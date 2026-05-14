@@ -38,6 +38,16 @@
                                 {{ m["message"] }}
                             </div>
 
+                            {% if m["image_filename"] %}
+                                <a href="{{ url_for('chat_photo', filename=m['image_filename']) }}"
+                                   target="_blank"
+                                   class="chat-image-link">
+                                    <img src="{{ url_for('chat_photo', filename=m['image_filename']) }}"
+                                         alt="Фото в чате"
+                                         class="chat-image">
+                                </a>
+                            {% endif %}
+
                             {% if m["user_id"] == user["id"] or user["is_superadmin"] == 1 %}
                                 <form method="POST"
                                       action="{{ url_for('chat_delete_message', message_id=m['id']) }}"
@@ -57,12 +67,20 @@
             <form method="POST"
                   action="{{ url_for('chat_send_message', group_id=group['id']) }}"
                   class="chat-form"
+                  enctype="multipart/form-data"
                   id="chatForm">
 
                 <textarea name="message"
                           placeholder="Напишите сообщение..."
                           maxlength="1000"
                           required></textarea>
+
+                <label class="chat-file-label">
+                    📎 Прикрепить фото
+                    <input type="file"
+                           name="image"
+                           accept="image/png,image/jpeg,image/webp">
+                </label>
 
                 <button type="submit" class="action-btn blue-btn">
                     Отправить

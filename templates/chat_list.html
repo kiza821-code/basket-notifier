@@ -31,7 +31,13 @@
                     {% for item in groups_data %}
                         <li class="player-item">
                             <div class="player-info">
-                                <span class="player-name">{{ item.group["name"] }}</span>
+                                <span class="player-name">
+                                    {{ item.group["name"] }}
+
+                                    {% if item.unread_count > 0 %}
+                                        <span class="chat-unread-badge">{{ item.unread_count }}</span>
+                                    {% endif %}
+                                </span>
 
                                 {% if item.last_message %}
                                     <span class="player-status active-status">
