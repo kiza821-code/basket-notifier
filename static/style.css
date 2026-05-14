@@ -2263,3 +2263,51 @@ button:active {
         overflow-x: hidden !important;
     }
 }
+
+/* ===== CHAT SCROLL TELEGRAM STYLE ===== */
+
+.training-card.chat-card {
+    position: relative;
+    max-height: 62vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding-right: 26px !important;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(130, 138, 155, 0.46) rgba(255, 255, 255, 0.035);
+    -webkit-overflow-scrolling: touch;
+}
+
+.training-card.chat-card::-webkit-scrollbar {
+    width: 10px;
+}
+
+.training-card.chat-card::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.035);
+    border-radius: 999px;
+    margin: 14px 4px;
+}
+
+.training-card.chat-card::-webkit-scrollbar-thumb {
+    background: rgba(130, 138, 155, 0.48);
+    border-radius: 999px;
+    border: 2px solid rgba(18, 18, 26, 0.95);
+}
+
+.training-card.chat-card::-webkit-scrollbar-thumb:hover {
+    background: rgba(160, 168, 185, 0.62);
+}
+
+.training-card.chat-card:hover {
+    transform: none !important;
+}
+
+@media (max-width: 600px) {
+    .training-card.chat-card {
+        max-height: 58vh !important;
+        padding-right: 20px !important;
+    }
+
+    .training-card.chat-card::-webkit-scrollbar {
+        width: 7px;
+    }
+}
