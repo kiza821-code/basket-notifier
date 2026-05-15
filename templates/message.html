@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='17') }}">
 </head>
 <body>
 
@@ -15,13 +15,10 @@
             <h1>{{ title }}</h1>
             <p class="message-text">{{ message }}</p>
 
-            <div class="message-actions">
-                <a href="{{ url_for('index') }}" class="action-btn blue-btn">На главную</a>
-                <button type="button" class="action-btn dark-btn" onclick="history.back()">Назад</button>
-            </div>
+
         </section>
     </div>
 </div>
-
+{% include "_bottom_nav.html" %}
 </body>
 </html>

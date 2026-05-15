@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Суперадмин</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='17') }}">
 </head>
 <body>
 
@@ -13,11 +13,7 @@
         <section class="training-card">
             <h1 style="margin-bottom: 20px;">🛡️ Панель суперадмина</h1>
 
-            <div class="admin-actions">
-                <a href="{{ url_for('index') }}" class="action-btn dark-btn">На главную</a>
-                <a href="{{ url_for('group_admin_panel') }}" class="action-btn blue-btn">Админка групп</a>
-                <a href="{{ url_for('logout') }}" class="action-btn red-btn">Выйти</a>
-            </div>
+
         </section>
 
         <section class="training-card">
@@ -128,6 +124,6 @@
 
     </div>
 </div>
-
+{% include "_bottom_nav.html" %}
 </body>
 </html>

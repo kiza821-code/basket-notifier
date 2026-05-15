@@ -1,0 +1,35 @@
+{% if nav_user %}
+<nav class="bottom-nav">
+    <a href="{{ url_for('index') }}" class="bottom-nav-item">
+        <span class="bottom-nav-icon">🏀</span>
+        <span class="bottom-nav-text">Главная</span>
+    </a>
+
+    <a href="{{ url_for('chat_list') }}" class="bottom-nav-item">
+        <span class="bottom-nav-icon">💬</span>
+        <span class="bottom-nav-text">Чаты</span>
+    </a>
+
+    {% if nav_user["is_superadmin"] == 1 %}
+        <a href="{{ url_for('superadmin_panel') }}" class="bottom-nav-item">
+            <span class="bottom-nav-icon">🛡️</span>
+            <span class="bottom-nav-text">Супер</span>
+        </a>
+    {% elif nav_can_open_group_admin %}
+        <a href="{{ url_for('group_admin_panel') }}" class="bottom-nav-item">
+            <span class="bottom-nav-icon">⚙️</span>
+            <span class="bottom-nav-text">Админка</span>
+        </a>
+    {% elif nav_user["is_admin"] == 1 %}
+        <a href="{{ url_for('admin_panel') }}" class="bottom-nav-item">
+            <span class="bottom-nav-icon">⚙️</span>
+            <span class="bottom-nav-text">Админка</span>
+        </a>
+    {% endif %}
+
+    <a href="{{ url_for('logout') }}" class="bottom-nav-item bottom-nav-danger">
+        <span class="bottom-nav-icon">↩</span>
+        <span class="bottom-nav-text">Выйти</span>
+    </a>
+</nav>
+{% endif %}

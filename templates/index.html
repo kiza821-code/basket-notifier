@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Запись на тренировки</title>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='15') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='17') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <meta name="theme-color" content="#0f172a">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
@@ -269,18 +269,7 @@
             {% endif %}
         {% endif %}
 
-        <div class="admin-header-links bottom-links">
-            <a class="admin-link" href="{{ url_for('chat_list') }}">Чаты</a>
-            {% if user and user["is_admin"] == 1 %}
-                <a class="admin-link" href="{{ url_for('admin_panel') }}">Админка</a>
-            {% endif %}
-            {% if can_open_group_admin %}
-                <a href="{{ url_for('group_admin_panel') }}" class="admin-link">
-                    Админка групп
-                </a>
-            {% endif %}
-            <a class="admin-link" href="{{ url_for('logout') }}">Выйти</a>
-        </div>
+
     </div>
 </div>
 
@@ -399,6 +388,6 @@
         pushBtn.addEventListener("click", enablePushNotifications);
     }
 </script>
-
+{% include "_bottom_nav.html" %}
 </body>
 </html>

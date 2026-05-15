@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Админка групп</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='14') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='17') }}">
 </head>
 <body>
 
@@ -14,11 +14,7 @@
         <section class="training-card">
             <h1 style="margin-bottom: 20px;">👥 Админка групп</h1>
 
-            <div class="admin-actions">
-                <a href="{{ url_for('index') }}" class="action-btn dark-btn">На главную</a>
-                <a href="{{ url_for('chat_list') }}" class="action-btn blue-btn">Чаты</a>
-                <a href="{{ url_for('logout') }}" class="action-btn red-btn">Выйти</a>
-            </div>
+
         </section>
 
         {% for item in groups_data %}
@@ -254,6 +250,6 @@
 
     </div>
 </div>
-
+{% include "_bottom_nav.html" %}
 </body>
 </html>

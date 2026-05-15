@@ -751,6 +751,27 @@ def get_user_groups(cursor, user):
         ORDER BY g.name ASC
     """, (user["id"],)).fetchall()
 
+@app.context_processor
+def inject_bottom_nav():
+    user = get_current_user()
+
+    can_open_group_admin = False
+
+    if user:
+        try:
+            db = get_db()
+            cursor = db.cursor()
+            admin_groups = get_admin_groups(cursor, user)
+            can_open_group_admin = bool(admin_groups)
+            db.close()
+        except Exception:
+            can_open_group_admin = False
+
+    return {
+        "nav_user": user,
+        "nav_can_open_group_admin": can_open_group_admin
+    }
+
 def login_required(func):
     @wraps(func)
     def wrapper(*args, **kwargs):

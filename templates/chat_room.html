@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Чат — {{ group["name"] }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='16') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='17') }}">
 </head>
 <body>
 
@@ -17,10 +17,7 @@
                 Общий чат группы
             </p>
 
-            <div class="admin-actions">
-                <a href="{{ url_for('chat_list') }}" class="action-btn dark-btn">Все чаты</a>
-                <a href="{{ url_for('index') }}" class="action-btn dark-btn">На главную</a>
-            </div>
+
         </section>
 
         <section class="training-card chat-card" id="chatCard">
@@ -227,6 +224,6 @@
         });
     }
 </script>
-
+{% include "_bottom_nav.html" %}
 </body>
 </html>
