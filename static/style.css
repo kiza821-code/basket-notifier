@@ -2705,3 +2705,31 @@ button:active {
         font-size: 22px;
     }
 }
+
+/* ===== CHAT ROOM WITHOUT BOTTOM NAV ===== */
+
+.chat-page {
+    padding-bottom: 92px !important;
+}
+
+.chat-input-bar {
+    bottom: max(12px, env(safe-area-inset-bottom)) !important;
+}
+
+.chat-scroll-area {
+    padding-bottom: 96px !important;
+}
+
+@media (max-width: 600px) {
+    .chat-page {
+        padding-bottom: 92px !important;
+    }
+
+    .chat-input-bar {
+        bottom: max(12px, env(safe-area-inset-bottom)) !important;
+    }
+
+    .chat-scroll-area {
+        padding-bottom: 96px !important;
+    }
+}
