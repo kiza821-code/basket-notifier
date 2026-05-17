@@ -64,7 +64,6 @@
             <form method="POST"
                   action="{{ url_for('chat_send_message', group_id=group['id']) }}"
                   class="chat-form"
-                  enctype="multipart/form-data"
                   id="chatForm">
 
                 <textarea name="message"
@@ -72,12 +71,6 @@
                           maxlength="1000"
                           required></textarea>
 
-                <label class="chat-file-label">
-                    📎 Прикрепить фото
-                    <input type="file"
-                           name="image"
-                           accept="image/png,image/jpeg,image/webp">
-                </label>
 
                 <button type="submit" class="action-btn blue-btn">
                     Отправить
