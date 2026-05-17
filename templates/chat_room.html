@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Чат — {{ group["name"] }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='19') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='20') }}">
 </head>
 <body class="chat-page-body">
 
@@ -23,9 +23,10 @@
 
     <main class="chat-scroll-area">
         {% if messages %}
-            <div class="chat-messages">
+            <div class="chat-messages" id="chatMessages">
                 {% for m in messages %}
-                    <div class="chat-message {% if m['user_id'] == user['id'] %}chat-message-own{% endif %}">
+                    <div class="chat-message {% if m['user_id'] == user['id'] %}chat-message-own{% endif %}"
+                         data-message-id="{{ m['id'] }}">
                         <div class="chat-message-head">
                             <strong>{{ m["display_name"] }}</strong>
                             <span>{{ m["created_at"][11:16] }}</span>
