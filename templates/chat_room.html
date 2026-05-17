@@ -4,81 +4,64 @@
     <meta charset="UTF-8">
     <title>Чат — {{ group["name"] }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='17') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='18') }}">
 </head>
-<body>
+<body class="chat-page-body">
 
-<div class="page">
-    <div class="container">
+<div class="chat-page">
 
-        <section class="training-card">
-            <h1 style="margin-bottom: 10px;">💬 {{ group["name"] }}</h1>
-            <p class="empty-text" style="padding: 0; margin-bottom: 18px;">
-                Общий чат группы
-            </p>
+    <header class="chat-topbar">
+        <a href="{{ url_for('chat_list') }}" class="chat-back-btn">‹</a>
 
+        <div class="chat-topbar-icon">💬</div>
 
-        </section>
+        <div class="chat-topbar-text">
+            <div class="chat-topbar-title">{{ group["name"] }}</div>
+            <div class="chat-topbar-subtitle">Общий чат группы</div>
+        </div>
+    </header>
 
-        <section class="training-card chat-card" id="chatCard">
-            {% if messages %}
-                <div class="chat-messages" id="chatMessages">
-                    {% for m in messages %}
-                        <div class="chat-message {% if m['user_id'] == user['id'] %}chat-message-own{% endif %}"
-                             data-message-id="{{ m['id'] }}">
-                            <div class="chat-message-head">
-                                <strong>{{ m["display_name"] }}</strong>
-                                <span>{{ m["created_at"][11:16] }}</span>
-                            </div>
-
-                            <div class="chat-message-text">
-                                {{ m["message"] }}
-                            </div>
-
-                            {% if m["image_filename"] %}
-                                <a href="{{ url_for('chat_photo', filename=m['image_filename']) }}"
-                                   target="_blank"
-                                   class="chat-image-link">
-                                    <img src="{{ url_for('chat_photo', filename=m['image_filename']) }}"
-                                         alt="Фото в чате"
-                                         class="chat-image">
-                                </a>
-                            {% endif %}
-
-                            {% if m["user_id"] == user["id"] or user["is_superadmin"] == 1 %}
-                                <form method="POST"
-                                      action="{{ url_for('chat_delete_message', message_id=m['id']) }}"
-                                      onsubmit="return confirm('Удалить сообщение?');">
-                                    <button type="submit" class="chat-delete-btn">Удалить</button>
-                                </form>
-                            {% endif %}
+    <main class="chat-scroll-area">
+        {% if messages %}
+            <div class="chat-messages">
+                {% for m in messages %}
+                    <div class="chat-message {% if m['user_id'] == user['id'] %}chat-message-own{% endif %}">
+                        <div class="chat-message-head">
+                            <strong>{{ m["display_name"] }}</strong>
+                            <span>{{ m["created_at"][11:16] }}</span>
                         </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p class="empty-text">Сообщений пока нет. Напишите первым.</p>
-            {% endif %}
-        </section>
 
-        <section class="training-card">
-            <form method="POST"
-                  action="{{ url_for('chat_send_message', group_id=group['id']) }}"
-                  class="chat-form"
-                  id="chatForm">
+                        <div class="chat-message-text">
+                            {{ m["message"] }}
+                        </div>
 
-                <textarea name="message"
-                          placeholder="Напишите сообщение..."
-                          maxlength="1000"
-                          required></textarea>
+                        {% if m["user_id"] == user["id"] or user["is_superadmin"] == 1 %}
+                            <form method="POST"
+                                  action="{{ url_for('chat_delete_message', message_id=m['id']) }}"
+                                  onsubmit="return confirm('Удалить сообщение?');">
+                                <button type="submit" class="chat-delete-btn">Удалить</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="empty-text">Сообщений пока нет. Напишите первым.</p>
+        {% endif %}
+    </main>
 
+    <form method="POST"
+          action="{{ url_for('chat_send_message', group_id=group['id']) }}"
+          class="chat-input-bar">
 
-                <button type="submit" class="action-btn blue-btn">
-                    Отправить
-                </button>
-            </form>
-        </section>
+        <textarea name="message"
+                  placeholder="Напишите сообщение..."
+                  maxlength="1000"
+                  required></textarea>
 
-    </div>
+        <button type="submit" class="chat-send-round-btn">➤</button>
+    </form>
+
 </div>
 
 <script>
