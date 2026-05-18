@@ -2186,7 +2186,7 @@ def chat_send_message(group_id):
 
     if recent_duplicate:
         last_dt = datetime.fromisoformat(recent_duplicate["created_at"])
-        if now_local() - last_dt < timedelta(seconds=5):
+        if now_local() - last_dt < timedelta(seconds=8):
             db.close()
             return redirect(url_for("chat_room", group_id=group_id))
 

@@ -64,7 +64,8 @@
 
     <form method="POST"
           action="{{ url_for('chat_send_message', group_id=group['id']) }}"
-          class="chat-input-bar">
+          class="chat-input-bar"
+          id="chatForm">
 
         <textarea name="message"
                   placeholder="Напишите сообщение..."
@@ -204,6 +205,33 @@
             if (button) {
                 button.disabled = true;
                 button.textContent = "Отправляем...";
+            }
+
+            if (textarea) {
+                textarea.readOnly = true;
+            }
+        });
+    }
+
+    const chatForm = document.getElementById("chatForm");
+
+    if (chatForm) {
+        let isSending = false;
+
+        chatForm.addEventListener("submit", function (event) {
+            if (isSending) {
+                event.preventDefault();
+                return false;
+            }
+
+            isSending = true;
+
+            const button = chatForm.querySelector("button[type='submit']");
+            const textarea = chatForm.querySelector("textarea[name='message']");
+
+            if (button) {
+                button.disabled = true;
+                button.textContent = "…";
             }
 
             if (textarea) {

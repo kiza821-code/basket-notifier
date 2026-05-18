@@ -2786,3 +2786,13 @@ button:active {
     cursor: pointer;
     font-size: 18px;
 }
+
+.chat-send-round-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.chat-input-bar textarea[readonly] {
+    opacity: 0.75;
+}
