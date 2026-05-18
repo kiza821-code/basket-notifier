@@ -2768,3 +2768,21 @@ button:active {
         line-height: 1.2 !important;
     }
 }
+
+/* ===== CHAT NOTIFICATION TOGGLE ===== */
+
+.chat-notify-form {
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.chat-notify-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.055);
+    color: var(--text-main);
+    cursor: pointer;
+    font-size: 18px;
+}

@@ -194,6 +194,12 @@ def init_db():
             ADD COLUMN is_superadmin INTEGER NOT NULL DEFAULT 0
         """)
 
+    if "chat_notifications_enabled" not in user_columns:
+        cursor.execute("""
+            ALTER TABLE users
+            ADD COLUMN chat_notifications_enabled INTEGER NOT NULL DEFAULT 1
+        """)
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS trainings (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -619,6 +625,16 @@ def send_push_to_user_tokens(user_id, title, body, url="/"):
 def send_chat_push_to_user_tokens(user_id, title, body, url="/"):
     db = get_db()
     cursor = db.cursor()
+
+    user_settings = cursor.execute("""
+        SELECT chat_notifications_enabled
+        FROM users
+        WHERE id = ?
+    """, (user_id,)).fetchone()
+
+    if not user_settings or user_settings["chat_notifications_enabled"] != 1:
+        db.close()
+        return []
 
     tokens = cursor.execute("""
         SELECT * FROM push_subscriptions
@@ -1942,6 +1958,29 @@ def chat_list():
         user=user,
         groups_data=groups_data
     )
+
+@app.route("/chat/notifications/toggle", methods=["POST"])
+@login_required
+@approved_required
+def toggle_chat_notifications():
+    user = get_current_user()
+
+    db = get_db()
+    cursor = db.cursor()
+
+    current_value = user["chat_notifications_enabled"] if "chat_notifications_enabled" in user.keys() else 1
+    new_value = 0 if current_value == 1 else 1
+
+    cursor.execute("""
+        UPDATE users
+        SET chat_notifications_enabled = ?
+        WHERE id = ?
+    """, (new_value, user["id"]))
+
+    db.commit()
+    db.close()
+
+    return redirect(request.referrer or url_for("chat_list"))
 
 @app.route("/chat/<int:group_id>")
 @login_required

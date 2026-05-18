@@ -18,6 +18,17 @@
         <div class="chat-topbar-text">
             <div class="chat-topbar-title">{{ group["name"] }}</div>
             <div class="chat-topbar-subtitle">Общий чат группы</div>
+            <form method="POST"
+                  action="{{ url_for('toggle_chat_notifications') }}"
+                  class="chat-notify-form">
+
+                {% if user["chat_notifications_enabled"] == 1 %}
+                    <button type="submit" class="chat-notify-btn" title="Отключить уведомления чата">🔔</button>
+                {% else %}
+                    <button type="submit" class="chat-notify-btn" title="Включить уведомления чата">🔕</button>
+                {% endif %}
+
+            </form>
         </div>
     </header>
 
