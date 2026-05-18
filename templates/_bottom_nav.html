@@ -4,11 +4,13 @@
         <span class="bottom-nav-icon">🏀</span>
         <span class="bottom-nav-text">Главная</span>
     </a>
+      {#
 
     <a href="{{ url_for('chat_list') }}" class="bottom-nav-item">
         <span class="bottom-nav-icon">💬</span>
         <span class="bottom-nav-text">Чаты</span>
     </a>
+    #}
 
     {% if nav_user["is_superadmin"] == 1 %}
         <a href="{{ url_for('superadmin_panel') }}" class="bottom-nav-item">
