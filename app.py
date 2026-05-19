@@ -3619,7 +3619,22 @@ def group_admin_panel():
     db = get_db()
     cursor = db.cursor()
 
+    selected_group_id = request.args.get("group_id", type=int)
+
     admin_groups = get_admin_groups(cursor, user)
+
+    if selected_group_id:
+        admin_groups = [
+            group for group in admin_groups
+            if group["id"] == selected_group_id
+        ]
+
+        if not admin_groups:
+            db.close()
+            return render_message_page(
+                "Нет доступа",
+                "Вы не можете управлять этой группой."
+            )
 
     groups_data = []
 

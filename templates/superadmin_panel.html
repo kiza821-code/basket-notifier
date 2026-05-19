@@ -65,6 +65,11 @@
                             </div>
 
                             <div class="player-actions">
+                                <a href="{{ url_for('group_admin_panel', group_id=group['id']) }}"
+                                   class="action-btn blue-btn">
+                                    Открыть админку
+                                </a>
+
                                 <form method="POST"
                                       action="{{ url_for('superadmin_delete_group', group_id=group['id']) }}"
                                       onsubmit="return confirm('Удалить группу {{ group['name'] }}? Это действие нельзя отменить.');">
